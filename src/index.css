@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-cream text-ink font-sans antialiased selection:bg-terra/20 selection:text-terra min-h-screen flex flex-col;
+    scroll-behavior: smooth;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif font-medium tracking-wide;
+  }
+}
+
+/* Custom Utilities / Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f5f0e8; /* cream */
+}
+::-webkit-scrollbar-thumb {
+  background: #8a7f72; /* muted */
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c0623a; /* terra */
+}
