@@ -43,12 +43,18 @@ export default function Contact() {
     {
       icon: <MapPin className="text-terra" size={18} />,
       label: "Address",
-      content: "12 Atelier Lane, Banjara Hills, Hyderabad 500034"
+      content: "Visakhapatnam"
     },
     {
       icon: <Phone className="text-terra" size={18} />,
       label: "Phone",
-      content: "+91 98765 43210"
+      content: (
+        <span className="flex flex-col gap-0.5">
+          <a href="tel:+918309978539" className="hover:text-terra transition-colors">+91 83099 78539</a>
+          <a href="tel:+918309151210" className="hover:text-terra transition-colors">+91 83091 51210</a>
+          <a href="tel:+919177881555" className="hover:text-terra transition-colors">+91 91778 81555</a>
+        </span>
+      )
     },
     {
       icon: <Mail className="text-terra" size={18} />,
@@ -86,7 +92,7 @@ export default function Contact() {
       {/* SECTION 2 — Two-Column Content Grid */}
       <main className="max-w-7xl mx-auto px-6 md:px-12 mt-16 grid grid-cols-1 lg:grid-cols-2 gap-16">
         
-        {/* LEFT COLUMN: Studio Info & Styled Map */}
+        {/* LEFT COLUMN: Studio Info */}
         <div className="flex flex-col gap-10">
           
           <div className="flex flex-col gap-4">
@@ -94,65 +100,24 @@ export default function Contact() {
               Find Us
             </h2>
             <p className="text-xs text-muted font-light leading-relaxed max-w-md">
-              Located in the heart of Banjara Hills, our studio offers a tranquil visual garden environment away from the city hubbub. Valet parking is available for all atelier guests.
+              Located in Visakhapatnam, our workshop offers a tranquil visual garden environment away from the city hubbub. Valet parking is available for all atelier guests.
             </p>
           </div>
 
           {/* Contact Details Grid */}
           <div className="flex flex-col gap-5">
             {contactDetails.map((detail, idx) => (
-              <div key={idx} className="flex items-center gap-4 group">
+              <div key={idx} className="flex items-start gap-4 group">
                 {/* Icon box (warm bg) */}
-                <div className="w-10 h-10 rounded-sm bg-warm border border-gold/10 flex items-center justify-center transition-colors group-hover:bg-gold/20 select-none">
+                <div className="w-10 h-10 rounded-sm bg-warm border border-gold/10 flex items-center justify-center transition-colors group-hover:bg-gold/20 select-none flex-shrink-0 mt-0.5">
                   {detail.icon}
                 </div>
                 <div>
-                  <span className="block text-[10px] uppercase tracking-wider text-muted font-semibold">{detail.label}</span>
-                  <p className="text-xs md:text-sm font-medium text-ink/80 mt-0.5">{detail.content}</p>
+                  <span className="block text-[10px] uppercase tracking-wider text-muted font-bold">{detail.label}</span>
+                  <div className="text-xs md:text-sm font-medium text-ink/80 mt-0.5">{detail.content}</div>
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* Styled Vector Map Placeholder */}
-          <div className="flex flex-col gap-2">
-            <span className="text-[10px] uppercase tracking-widest text-muted font-bold mb-1 select-none">Studio Location</span>
-            
-            <div className="bg-ink rounded-sm relative overflow-hidden aspect-[16/10] sm:aspect-[16/9] border border-gold/30 flex flex-col items-center justify-center p-6 shadow-md select-none group">
-              {/* Map grid pattern lines */}
-              <div className="absolute inset-0 bg-[linear-gradient(rgba(212,168,83,0.06)_1px,_transparent_1px),_linear-gradient(90deg,_rgba(212,168,83,0.06)_1px,_transparent_1px)] bg-[size:25px_25px] opacity-75" />
-              
-              {/* Simulated abstract geographical roads/rivers */}
-              <svg className="absolute inset-0 w-full h-full text-warm/5 opacity-25 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M-50 100 C 100 150, 200 50, 600 120" fill="none" stroke="currentColor" strokeWidth="2" />
-                <path d="M100 -50 C 150 200, 50 300, 220 500" fill="none" stroke="currentColor" strokeWidth="2" />
-                <path d="M-20 300 L 600 -10" fill="none" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
-
-              {/* Pulsing Pin Marker */}
-              <div className="relative flex h-6 w-6 items-center justify-center z-10 cursor-pointer">
-                {/* Ping ring animation */}
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-terra opacity-75" />
-                {/* Core dot marker */}
-                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-terra border border-cream shadow-md" />
-              </div>
-
-              {/* Gold Studio Label */}
-              <div className="z-10 mt-3 text-center">
-                <h4 className="font-serif text-sm tracking-widest uppercase font-semibold text-gold">
-                  MuseHaus Studio
-                </h4>
-                <p className="text-[9px] text-cream/70 uppercase tracking-widest mt-1">
-                  Atelier & Exhibition Spaces
-                </p>
-              </div>
-
-              {/* Decorative Compass indicator */}
-              <div className="absolute bottom-4 right-4 text-cream/20 text-xs flex flex-col items-center select-none font-serif italic">
-                <span>N</span>
-                <span className="h-4 w-px bg-cream/20 my-0.5" />
-              </div>
-            </div>
           </div>
 
         </div>
@@ -245,7 +210,9 @@ export default function Contact() {
             </span>
             <div className="flex gap-3 w-full sm:w-auto">
               <a
-                href="#"
+                href="https://www.instagram.com/muse__haus?igsh=MWVxOWwyMWFpZmprNA=="
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex-grow sm:flex-grow-0 bg-transparent hover:bg-ink text-ink hover:text-cream border border-ink/15 hover:border-ink px-4 py-2 text-[10px] uppercase tracking-wider font-semibold rounded-sm text-center transition-colors"
               >
                 Instagram

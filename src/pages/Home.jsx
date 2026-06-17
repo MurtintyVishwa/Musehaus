@@ -10,7 +10,7 @@ import WorkshopCard from '../components/WorkshopCard';
 const TESTIMONIALS = [
   {
     id: 1,
-    quote: "MuseHaus redefined how I view clay. The studio environment is peaceful, refined, and Kenji's guidance is masterly. It's a genuine luxury escape in the middle of the city.",
+    quote: "MuseHaus redefined how I view clay. The workshop environment is peaceful, refined, and Kenji's guidance is masterly. It's a genuine luxury escape in the middle of the city.",
     author: "Elena Rostova",
     role: "Collector & Ceramicist",
     initials: "ER"
@@ -129,8 +129,12 @@ export default function Home() {
           </h1>
 
           {/* Subheading */}
-          <p className="text-base md:text-xl font-sans text-muted max-w-2xl font-light leading-relaxed">
-            MuseHaus is a luxury art workshop studio in the Arts District. Explore premium masterclasses in pottery, stone carving, oil painting, and mixed media.
+          <p className="text-base md:text-xl font-sans text-muted max-w-2xl font-light leading-relaxed whitespace-pre-line">
+            {`MuseHaus ✨🎨
+A home of creativity & inspiration
+A cozy corner for art lovers to create, learn & connect 🤍
+🖌️ Tray Painting | Clay Art | Fridge Magnets & more
+Creating art, memories & beautiful experiences together ✨`}
           </p>
 
           {/* Buttons */}
@@ -143,85 +147,30 @@ export default function Home() {
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </Link>
             <a
-              href="#intro"
+              href="#workshops"
               className="bg-transparent hover:bg-ink/5 text-ink border border-ink/35 text-xs uppercase tracking-[0.2em] font-bold px-8 py-4 rounded-sm transition-all duration-300 flex items-center justify-center"
             >
-              The Studio Story
+              Workshop Story
             </a>
           </div>
 
-        </div>
-      </section>
-
-      {/* 2. STUDIO INTRO SECTION */}
-      <section id="intro" className="py-24 px-6 md:px-12 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center border-b border-ink/5">
-        
-        {/* Left: Narrative */}
-        <div className="flex flex-col gap-6">
-          <div className="flex items-center gap-2 text-terra text-xs uppercase tracking-widest font-semibold">
-            <Compass size={14} />
-            <span>Our Philosophy</span>
-          </div>
-          
-          <h2 className="font-serif text-3xl md:text-5xl leading-tight text-ink font-medium tracking-wide">
-            Cultivating space for the tactile and true.
-          </h2>
-          
-          <p className="text-sm md:text-base text-muted font-light leading-relaxed">
-            In a digital-first world, we dedicate ourselves to the sensory. The cold weight of wet clay on the wheel, the smell of turpentine and oil medium, the physical tension of chiseling form out of raw marble.
-          </p>
-
-          <p className="text-sm md:text-base text-muted font-light leading-relaxed">
-            Our atelier provides professional-grade materials, organic hand-blended teas, clean-air environments, and master instructors with years of exhibition history. Here, you are not just a student; you are an artist in residence.
-          </p>
-
-          <div className="grid grid-cols-3 gap-6 mt-4 border-t border-ink/5 pt-8">
+          {/* Stats strip */}
+          <div className="grid grid-cols-2 gap-8 md:gap-16 mt-12 border-t border-ink/10 pt-8 w-full max-w-xl">
             <div>
-              <p className="font-serif text-3xl font-bold text-terra">12</p>
+              <p className="font-serif text-3xl font-bold text-terra">20 to 30</p>
               <p className="text-[10px] uppercase tracking-wider text-muted font-semibold mt-1">Max Class Capacity</p>
-            </div>
-            <div>
-              <p className="font-serif text-3xl font-bold text-gold">4</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted font-semibold mt-1 font-sans">Artistic Mediums</p>
             </div>
             <div>
               <p className="font-serif text-3xl font-bold text-ink">100%</p>
               <p className="text-[10px] uppercase tracking-wider text-muted font-semibold mt-1">Tactile Materials</p>
             </div>
           </div>
+
         </div>
-
-        {/* Right: Beautiful Decorative Mood Canvas */}
-        <div className="relative aspect-square md:aspect-[4/3] lg:aspect-square bg-gradient-to-br from-[#f5f0e8] to-[#e8e0d0] border border-gold/40 p-12 rounded-sm shadow-inner flex flex-col justify-between overflow-hidden group">
-          {/* Styled grid texture background */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(212,168,83,0.06)_1px,_transparent_1px),_linear-gradient(90deg,_rgba(212,168,83,0.06)_1px,_transparent_1px)] bg-[size:30px_30px]" />
-          
-          {/* Terracotta/Gold blob accents */}
-          <div className="absolute top-1/4 -right-12 w-64 h-64 bg-terra/10 rounded-full blur-[60px]" />
-          <div className="absolute -bottom-16 -left-16 w-64 h-64 bg-gold/15 rounded-full blur-[60px]" />
-
-          <div className="z-10 self-start">
-            <span className="font-serif text-6xl text-gold/30">“</span>
-          </div>
-
-          <div className="z-10 my-auto text-center">
-            <blockquote className="font-serif text-xl md:text-2xl text-ink leading-relaxed italic px-4 font-light">
-              Craft is not about speed. It is about alignment — of hands, eye, and heart.
-            </blockquote>
-            <cite className="block text-[10px] uppercase tracking-[0.2em] text-muted font-semibold mt-4 not-italic font-sans">
-              — MuseHaus Principles
-            </cite>
-          </div>
-
-          <div className="z-10 self-end">
-            <span className="font-serif text-6xl text-gold/30 block text-right">”</span>
-          </div>
-        </div>
-
       </section>
 
       {/* 3. FEATURED WORKSHOPS GRID */}
-      <section className="py-24 px-6 md:px-12 max-w-7xl mx-auto border-b border-ink/5">
+      <section id="workshops" className="py-24 px-6 md:px-12 max-w-7xl mx-auto border-b border-ink/5">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
             <div className="flex items-center gap-2 text-terra text-xs uppercase tracking-widest font-semibold mb-2">
@@ -229,7 +178,7 @@ export default function Home() {
               <span>Atelier Sessions</span>
             </div>
             <h2 className="font-serif text-3xl md:text-5xl text-ink font-medium tracking-wide">
-              Upcoming Studio Classes
+              Upcoming Workshops
             </h2>
           </div>
           <Link
@@ -331,7 +280,7 @@ export default function Home() {
               Subscribe to the Journal
             </h2>
             <p className="text-sm text-muted max-w-md font-light leading-relaxed">
-              Receive notifications of new seasonal workshops, masterclass calendars, and studio exhibitions.
+              Receive notifications of new seasonal workshops, masterclass calendars, and workshop exhibitions.
             </p>
           </div>
 
