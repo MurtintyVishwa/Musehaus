@@ -125,7 +125,7 @@ export default function Home() {
 
           {/* Headline */}
           <h1 className="font-serif text-5xl md:text-7xl leading-[1.1] tracking-wide text-ink font-light max-w-4xl">
-            Where luxury meets the beauty of <span className="font-italic text-terra italic">slow craft</span>
+            Where creativity, friendship, and beautiful <span className="font-italic text-terra italic">memories come to life.</span>
           </h1>
 
           {/* Subheading */}
@@ -146,23 +146,19 @@ Creating art, memories & beautiful experiences together ✨`}
               <span>Explore Workshops</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </Link>
-            <a
-              href="#workshops"
+            <Link
+              to="/story"
               className="bg-transparent hover:bg-ink/5 text-ink border border-ink/35 text-xs uppercase tracking-[0.2em] font-bold px-8 py-4 rounded-sm transition-all duration-300 flex items-center justify-center"
             >
-              Workshop Story
-            </a>
+              Our Story
+            </Link>
           </div>
 
           {/* Stats strip */}
-          <div className="grid grid-cols-2 gap-8 md:gap-16 mt-12 border-t border-ink/10 pt-8 w-full max-w-xl">
+          <div className="grid grid-cols-1 gap-8 md:gap-16 mt-12 border-t border-ink/10 pt-8 w-full max-w-xl">
             <div>
               <p className="font-serif text-3xl font-bold text-terra">20 to 30</p>
               <p className="text-[10px] uppercase tracking-wider text-muted font-semibold mt-1">Max Class Capacity</p>
-            </div>
-            <div>
-              <p className="font-serif text-3xl font-bold text-ink">100%</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted font-semibold mt-1">Tactile Materials</p>
             </div>
           </div>
 

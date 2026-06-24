@@ -5,9 +5,6 @@ import { useToast } from '../context/ToastContext';
 import { enrollInWorkshop } from '../lib/supabase';
 import { Eye, EyeOff, Sparkles } from 'lucide-react';
 
-const INTERESTS_LIST = [
-  'Painting', 'Sculpture', 'Ceramics', 'Mixed Media', 'Drawing', 'Printmaking'
-];
 
 export default function Register() {
   const { signUp } = useAuth();
@@ -47,23 +44,6 @@ export default function Register() {
     }
   };
 
-  // Interest Tag Toggle
-  const toggleInterest = (interest) => {
-    setFormData((prev) => {
-      const isSelected = prev.interests.includes(interest);
-      const newInterests = isSelected
-        ? prev.interests.filter((i) => i !== interest)
-        : [...prev.interests, interest];
-      
-      // Clear interest error if any
-      if (errors.interests) {
-        setErrors((errs) => ({ ...errs, interests: '' }));
-      }
-
-      return { ...prev, interests: newInterests };
-    });
-  };
-
   // Form Validation
   const validateForm = () => {
     const newErrors = {};
@@ -93,10 +73,6 @@ export default function Register() {
       newErrors.confirmPassword = "Please confirm your password.";
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match.";
-    }
-
-    if (formData.interests.length === 0) {
-      newErrors.interests = "Please select at least one interest.";
     }
 
     if (!formData.acceptTerms) {
@@ -301,31 +277,6 @@ export default function Register() {
                 </div>
                 {errors.confirmPassword && <span className="text-[10px] text-terra font-medium">{errors.confirmPassword}</span>}
               </div>
-            </div>
-
-            {/* Artistic Interests */}
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] uppercase tracking-widest font-bold text-muted">Artistic Interests</label>
-              <div className="flex flex-wrap gap-2">
-                {INTERESTS_LIST.map((interest) => {
-                  const isSelected = formData.interests.includes(interest);
-                  return (
-                    <button
-                      key={interest}
-                      type="button"
-                      onClick={() => toggleInterest(interest)}
-                      className={`text-[10px] uppercase tracking-wider font-semibold px-3.5 py-2 rounded-sm border transition-all duration-300 ${
-                        isSelected
-                          ? 'bg-terra border-terra text-cream shadow-sm'
-                          : 'border-ink/15 text-ink hover:border-ink/35 hover:bg-ink/5'
-                      }`}
-                    >
-                      {interest}
-                    </button>
-                  );
-                })}
-              </div>
-              {errors.interests && <span className="text-[10px] text-terra font-medium">{errors.interests}</span>}
             </div>
 
             {/* Terms and Conditions Checkbox */}
