@@ -43,10 +43,10 @@ export default function Workshops() {
             {/* Title & Subtitle */}
             <div className="flex flex-col gap-3">
               <h2 className="font-serif text-3xl md:text-5xl font-medium text-ink leading-tight tracking-wide">
-                🎨 MuseHaus: Tray Painting Workshop
+                🎨 Paint & Create: Moulds + Mini Easels
               </h2>
               <p className="text-base md:text-lg text-ink/75 font-light leading-relaxed max-w-lg">
-                Paint your own beautiful decorative tray and take home a handmade keepsake.
+                Create beautiful painted moulds and mini easel art — and take home your own handmade keepsakes.
               </p>
             </div>
 
@@ -72,8 +72,8 @@ export default function Workshops() {
               {/* Price */}
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-ink/50 font-semibold">Pricing</p>
-                <p className="text-sm font-semibold text-ink">₹399 per person</p>
-                <p className="text-xs text-ink/60 font-light">Combo (2 people) ₹599</p>
+                <p className="text-sm font-semibold text-ink">₹499 per person</p>
+                <p className="text-xs text-ink/60 font-light">Combo (2 members) ₹799</p>
               </div>
             </div>
 

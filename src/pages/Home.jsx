@@ -154,13 +154,7 @@ Creating art, memories & beautiful experiences together ✨`}
             </Link>
           </div>
 
-          {/* Stats strip */}
-          <div className="grid grid-cols-1 gap-8 md:gap-16 mt-12 border-t border-ink/10 pt-8 w-full max-w-xl">
-            <div>
-              <p className="font-serif text-3xl font-bold text-terra">20 to 30</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted font-semibold mt-1">Max Class Capacity</p>
-            </div>
-          </div>
+
 
         </div>
       </section>
@@ -187,13 +181,11 @@ Creating art, memories & beautiful experiences together ✨`}
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="h-96 rounded-sm bg-warm/20 animate-pulse border border-ink/5" />
-            ))}
+          <div className="max-w-xl mx-auto">
+            <div className="h-96 rounded-sm bg-warm/20 animate-pulse border border-ink/5" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="max-w-xl mx-auto">
             {workshops.map((workshop) => (
               <WorkshopCard
                 key={workshop.id}
@@ -216,7 +208,7 @@ Creating art, memories & beautiful experiences together ✨`}
           </div>
 
           <h2 className="font-serif text-xs uppercase tracking-[0.25em] text-muted font-semibold">
-            Atelier Experiences
+            What Our Members Say
           </h2>
 
           {/* Carousel Body */}
@@ -262,44 +254,10 @@ Creating art, memories & beautiful experiences together ✨`}
         </div>
       </section>
 
-      {/* 5. NEWSLETTER STRIP */}
-      <section className="py-20 px-6 md:px-12 bg-ink text-cream relative overflow-hidden">
-        {/* Soft geometric details */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-terra/5 rounded-full blur-[80px]" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-gold/5 rounded-full blur-[80px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(245,240,232,0.01)_1px,_transparent_1px),_linear-gradient(90deg,_rgba(245,240,232,0.01)_1px,_transparent_1px)] bg-[size:50px_50px] pointer-events-none" />
-
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-12 z-10 relative">
-          
-          <div className="flex flex-col gap-3 text-center md:text-left">
-            <h2 className="font-serif text-3xl md:text-4xl leading-tight font-medium tracking-wide">
-              Subscribe to the Journal
-            </h2>
-            <p className="text-sm text-muted max-w-md font-light leading-relaxed">
-              Receive notifications of new seasonal workshops, masterclass calendars, and workshop exhibitions.
-            </p>
-          </div>
-
-          <form onSubmit={handleNewsletterSubmit} className="w-full md:w-auto flex flex-col sm:flex-row gap-3">
-            <input
-              type="email"
-              value={emailInput}
-              onChange={(e) => setEmailInput(e.target.value)}
-              placeholder="Enter your email address"
-              className="bg-warm/10 border border-cream/20 hover:border-cream/40 text-cream px-5 py-3.5 rounded-sm text-xs uppercase tracking-widest placeholder:text-muted placeholder:font-light focus:outline-none focus:border-gold/60 w-full sm:w-72 transition-colors"
-              required
-            />
-            
-            <button
-              type="submit"
-              className="bg-terra hover:bg-terra/90 text-cream text-xs uppercase tracking-widest font-bold px-6 py-3.5 rounded-sm transition-all duration-300 shadow-md border border-terra/20 whitespace-nowrap"
-            >
-              Subscribe
-            </button>
-          </form>
-
-        </div>
-      </section>
+      {/* 5. NEWSLETTER STRIP — commented out until mailing list is ready */}
+      {/* <section className="py-20 px-6 md:px-12 bg-ink text-cream relative overflow-hidden">
+        ...
+      </section> */}
     </div>
   );
 }

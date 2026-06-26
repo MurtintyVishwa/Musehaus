@@ -59,12 +59,12 @@ export default function Contact() {
     {
       icon: <Mail className="text-terra" size={18} />,
       label: "Email",
-      content: "hello@musehaus.in"
+      content: "musehaus997866@gmail.com"
     },
     {
       icon: <Clock className="text-terra" size={18} />,
       label: "Hours",
-      content: "Tue–Sun 9:00 AM – 7:00 PM, Monday Closed"
+      content: "Tuesday – Sunday: 9 AM – 7:30 PM"
     }
   ];
 
@@ -100,7 +100,7 @@ export default function Contact() {
               Find Us
             </h2>
             <p className="text-xs text-muted font-light leading-relaxed max-w-md">
-              Located in Visakhapatnam, our workshop offers a tranquil visual garden environment away from the city hubbub. Valet parking is available for all atelier guests.
+              Located in Visakhapatnam. We'd love to have you at our workshop!
             </p>
           </div>
 
@@ -216,12 +216,6 @@ export default function Contact() {
                 className="flex-grow sm:flex-grow-0 bg-transparent hover:bg-ink text-ink hover:text-cream border border-ink/15 hover:border-ink px-4 py-2 text-[10px] uppercase tracking-wider font-semibold rounded-sm text-center transition-colors"
               >
                 Instagram
-              </a>
-              <a
-                href="#"
-                className="flex-grow sm:flex-grow-0 bg-transparent hover:bg-ink text-ink hover:text-cream border border-ink/15 hover:border-ink px-4 py-2 text-[10px] uppercase tracking-wider font-semibold rounded-sm text-center transition-colors"
-              >
-                Pinterest
               </a>
             </div>
           </div>

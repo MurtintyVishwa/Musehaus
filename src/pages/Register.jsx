@@ -19,9 +19,9 @@ export default function Register() {
     lastName: '',
     email: '',
     phone: '',
+    address: '',
     password: '',
     confirmPassword: '',
-    interests: [],
     acceptTerms: false
   });
 
@@ -232,6 +232,21 @@ export default function Register() {
                 className="bg-warm/25 border border-ink/10 focus:border-terra rounded-sm px-4 py-3 text-sm focus:outline-none transition-colors"
               />
               {errors.phone && <span className="text-[10px] text-terra font-medium">{errors.phone}</span>}
+            </div>
+
+            {/* Current Address */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] uppercase tracking-widest font-bold text-muted">Current Address *</label>
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                placeholder="Your city / area of residence"
+                className="bg-warm/25 border border-ink/10 focus:border-terra rounded-sm px-4 py-3 text-sm focus:outline-none transition-colors"
+                required
+              />
+              {errors.address && <span className="text-[10px] text-terra font-medium">{errors.address}</span>}
             </div>
 
             {/* Password & Confirm password row */}

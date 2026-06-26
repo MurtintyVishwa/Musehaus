@@ -89,13 +89,12 @@ const Footer = () => {
             Location & Hours
           </h4>
           <address className="not-italic text-sm text-muted flex flex-col gap-2 font-light">
-            <p>18 Atelier Way, Suite 400</p>
-            <p>Arts District, NY 10013</p>
-            <p className="mt-2 text-cream font-medium">Tues — Sun: 10:00 AM – 7:00 PM</p>
+            <p>Visakhapatnam</p>
+            <p className="mt-2 text-cream font-medium">Tue – Sun: 9 AM – 7:30 PM</p>
             <p className="mt-1 hover:text-terra transition-colors duration-200">
-              <a href="mailto:hello@musehaus.com">hello@musehaus.com</a>
+              <a href="mailto:musehaus997866@gmail.com">musehaus997866@gmail.com</a>
             </p>
-            <p>+1 (212) 555-0192</p>
+            <p><a href="tel:+918309978539" className="hover:text-terra transition-colors duration-200">+91 83099 78539</a></p>
           </address>
         </div>
 
@@ -104,19 +103,13 @@ const Footer = () => {
       {/* Bottom Bar Section */}
       <div className="max-w-7xl mx-auto px-6 md:px-12 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted">
         <p className="font-light">
-          &copy; {currentYear} MuseHaus Studio. All rights reserved. Designed for craft.
+          &copy; {currentYear} MuseHaus. All rights reserved.
         </p>
         
         {/* Social & Badges */}
         <div className="flex items-center gap-6">
-          <a href="#" className="hover:text-terra transition-colors duration-200" aria-label="Instagram">
+          <a href="https://www.instagram.com/muse__haus?igsh=MWVxOWwyMWFpZmprNA==" target="_blank" rel="noopener noreferrer" className="hover:text-terra transition-colors duration-200" aria-label="Instagram">
             <InstagramIcon size={16} />
-          </a>
-          <a href="#" className="hover:text-terra transition-colors duration-200" aria-label="Facebook">
-            <FacebookIcon size={16} />
-          </a>
-          <a href="#" className="hover:text-terra transition-colors duration-200" aria-label="Twitter">
-            <TwitterIcon size={16} />
           </a>
           <span className="h-4 w-px bg-cream/10" />
           <div className="flex items-center gap-1 select-none text-[10px] uppercase tracking-wider font-semibold text-gold">

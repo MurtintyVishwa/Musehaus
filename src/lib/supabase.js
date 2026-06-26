@@ -26,107 +26,22 @@ const delay = (ms = 400) => new Promise(resolve => setTimeout(resolve, ms));
 
 // --- Hardcoded Workshop Data ---
 const DEFAULT_WORKSHOPS = [
-  { 
-    id: 1, 
-    title: "Light & Shadow in Oils", 
-    instructor_name: "Marina Voss", 
-    instructor_avatar_initials: "MV", 
-    medium: "painting", 
-    level: "intermediate", 
-    date: "June 14, 2026", 
-    time: "10:00 AM – 2:00 PM", 
-    duration_hours: 4, 
-    price: 2800, 
-    seats_total: 12, 
-    seats_remaining: 2, 
-    status: "almost-full",
-    gradient_style: "from-[#e8a87c] to-[#c0623a]",
-    created_at: new Date('2026-05-01').toISOString()
-  },
-  { 
-    id: 2, 
-    title: "Wheel Throwing Intensive", 
-    instructor_name: "Kenji Lam", 
-    instructor_avatar_initials: "KL", 
-    medium: "ceramics", 
-    level: "beginner", 
-    date: "June 21, 2026", 
-    time: "9:00 AM – 3:00 PM", 
-    duration_hours: 6, 
-    price: 4100, 
-    seats_total: 12, 
-    seats_remaining: 7, 
-    status: "open",
-    gradient_style: "from-[#9ab8cc] to-[#4a7a9b]",
-    created_at: new Date('2026-05-02').toISOString()
-  },
-  { 
-    id: 3, 
-    title: "Collage & Texture Exploration", 
-    instructor_name: "Sofia Alves", 
-    instructor_avatar_initials: "SA", 
-    medium: "mixed", 
-    level: "beginner", 
-    date: "July 4, 2026", 
-    time: "2:00 PM – 5:00 PM", 
-    duration_hours: 3, 
-    price: 2400, 
-    seats_total: 12, 
-    seats_remaining: 9, 
-    status: "open",
-    gradient_style: "from-[#d4a8c4] to-[#8a5282]",
-    created_at: new Date('2026-05-03').toISOString()
-  },
-  { 
-    id: 4, 
-    title: "Stone Carving: Form & Void", 
-    instructor_name: "Ravi Krishnamurthy", 
-    instructor_avatar_initials: "RK", 
-    medium: "sculpture", 
-    level: "advanced", 
-    date: "July 12, 2026", 
-    time: "9:00 AM – 5:00 PM", 
-    duration_hours: 8, 
-    price: 5600, 
-    seats_total: 12, 
-    seats_remaining: 0, 
-    status: "sold-out",
-    gradient_style: "from-[#a8c8a0] to-[#5a8a52]",
-    created_at: new Date('2026-05-04').toISOString()
-  },
-  { 
-    id: 5, 
-    title: "Watercolour for Beginners", 
-    instructor_name: "Anika Rao", 
-    instructor_avatar_initials: "AR", 
-    medium: "painting", 
-    level: "beginner", 
-    date: "July 19, 2026", 
-    time: "11:00 AM – 2:00 PM", 
-    duration_hours: 3, 
-    price: 1800, 
-    seats_total: 12, 
-    seats_remaining: 6, 
+  {
+    id: 1,
+    title: "Paint & Create: Moulds + Mini Easels",
+    instructor_name: "MuseHaus Team",
+    instructor_avatar_initials: "MH",
+    medium: "painting",
+    level: "beginner",
+    date: "Saturday, July 6",
+    time: "10:00 AM – 1:00 PM",
+    duration_hours: 3,
+    price: 499,
+    seats_total: 20,
+    seats_remaining: 15,
     status: "open",
     gradient_style: "from-[#e8a87c] to-[#c0623a]",
-    created_at: new Date('2026-05-05').toISOString()
-  },
-  { 
-    id: 6, 
-    title: "Glaze Chemistry & Firing", 
-    instructor_name: "Kenji Lam", 
-    instructor_avatar_initials: "KL", 
-    medium: "ceramics", 
-    level: "intermediate", 
-    date: "August 2, 2026", 
-    time: "10:00 AM – 4:00 PM", 
-    duration_hours: 6, 
-    price: 4600, 
-    seats_total: 12, 
-    seats_remaining: 2, 
-    status: "almost-full",
-    gradient_style: "from-[#9ab8cc] to-[#4a7a9b]",
-    created_at: new Date('2026-05-06').toISOString()
+    created_at: new Date('2026-06-01').toISOString()
   }
 ];
 
@@ -144,6 +59,13 @@ const setMockData = (key, data) => {
 
 // Initialize mock database stores
 if (MOCK_MODE) {
+  // Version key: bump this string whenever DEFAULT_WORKSHOPS changes to clear stale cache
+  const DATA_VERSION = 'v3_paint_create';
+  const storedVersion = localStorage.getItem('musehaus_data_version');
+  if (storedVersion !== DATA_VERSION) {
+    localStorage.removeItem('musehaus_workshops');
+    localStorage.setItem('musehaus_data_version', DATA_VERSION);
+  }
   getMockData('workshops', DEFAULT_WORKSHOPS);
   getMockData('enrollments', []);
   getMockData('users', []);
