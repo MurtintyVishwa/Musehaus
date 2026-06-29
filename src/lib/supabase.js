@@ -217,12 +217,12 @@ export async function getUser() {
 
 // --- ENROLLMENT FUNCTIONS (MOCK/LIVE HELPER) ---
 
-export async function enrollInWorkshop(userId, workshopId) {
+export async function enrollInWorkshop(userId, workshopId, razorpayPaymentId = null) {
   if (MOCK_MODE) {
     await delay(450);
     const enrollments = getMockData('enrollments', []);
     const workshops = getMockData('workshops', DEFAULT_WORKSHOPS);
-    
+
     // Check if already enrolled
     const exists = enrollments.find(e => e.user_id === userId && e.workshop_id === workshopId);
     if (exists) {
@@ -254,11 +254,12 @@ export async function enrollInWorkshop(userId, workshopId) {
       user_id: userId,
       workshop_id: workshopId,
       enrolled_at: new Date().toISOString(),
-      payment_status: "paid"
+      payment_status: razorpayPaymentId ? "paid" : "pending",
+      razorpay_payment_id: razorpayPaymentId || null
     };
 
     enrollments.push(newEnrollment);
-    
+
     // Save both
     setMockData('workshops', workshops);
     setMockData('enrollments', enrollments);
@@ -268,10 +269,15 @@ export async function enrollInWorkshop(userId, workshopId) {
     const { data, error } = await supabase
       .from('enrollments')
       .insert([
-        { user_id: userId, workshop_id: workshopId, payment_status: 'paid' }
+        {
+          user_id: userId,
+          workshop_id: workshopId,
+          payment_status: razorpayPaymentId ? 'paid' : 'pending',
+          razorpay_payment_id: razorpayPaymentId || null
+        }
       ])
       .select();
-    
+
     // Note: Live version should handle seat subtraction in a trigger or database transaction!
     return { data, error };
   }
