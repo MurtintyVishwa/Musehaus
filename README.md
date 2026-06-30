@@ -51,12 +51,13 @@ Follow these steps to set up MuseHaus locally:
      ```bash
      cp .env.example .env
      ```
-   - Open `.env` and fill in your Supabase connection credentials:
+   - Open `.env` and fill in your credentials (see the full placeholder guide below):
      ```env
      VITE_SUPABASE_URL=your_supabase_project_url
      VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+     VITE_RAZORPAY_KEY_ID=rzp_test_YOUR_KEY_ID_HERE
      ```
-   - *Note*: If these variables are not present, the site automatically activates its local mock fallback layer.
+   - *Note*: If Supabase variables are missing the site activates its local mock fallback. Razorpay payments also work in test mode without a backend.
 
 4. **Run the Development Server**
    ```bash
@@ -81,6 +82,58 @@ To switch the project from Mock Mode to Live Mode:
 
 ---
 
+---
+
+## 💳 Razorpay Payment Gateway
+
+MuseHaus uses Razorpay for workshop payments. The checkout flow is fully client-side (Razorpay Checkout.js) — no backend server required for basic operation.
+
+### How it works
+
+1. User clicks "Book" on the Workshops page → redirected to `/checkout`
+2. Checkout page loads Razorpay's hosted payment modal
+3. On success, `razorpay_payment_id` is stored in the enrollment record
+4. User is enrolled and redirected to home
+
+### What you need to fill in
+
+| Placeholder | Where | What to put |
+|---|---|---|
+| `VITE_RAZORPAY_KEY_ID` | `.env` | Your Razorpay Key ID — get from [dashboard.razorpay.com/app/keys](https://dashboard.razorpay.com/app/keys) |
+| `YOUR_RAZORPAY_KEY_ID` | Vercel environment variables | Same key, set in Vercel dashboard for production |
+
+**Test vs Live keys:**
+- Development: use `rzp_test_...` key — no real money charged
+- Production: use `rzp_live_...` key — real payments processed
+
+### Adding server-side order creation (recommended for production)
+
+The current setup skips Razorpay order creation and sets the amount client-side, which is fine for testing. For production you should:
+
+1. Create a backend endpoint (Node/Python/etc.) that calls Razorpay's Orders API:
+   ```
+   POST https://api.razorpay.com/v1/orders
+   { amount, currency, receipt }
+   ```
+   This requires your **Razorpay Key Secret** (never expose this in frontend code).
+2. Pass the returned `order_id` to the `options.order_id` field in [src/pages/Checkout.jsx](src/pages/Checkout.jsx) (line with the `// order_id:` comment).
+3. Add webhook verification using your **Webhook Secret** to confirm payments server-side.
+
+| Secret | Used where | Where to get |
+|---|---|---|
+| Razorpay Key Secret | Backend only — never in `.env` on frontend | Razorpay Dashboard → API Keys |
+| Razorpay Webhook Secret | Backend webhook handler | Razorpay Dashboard → Webhooks |
+
+### Database column for payment ID
+
+The `enrollments` table needs a `razorpay_payment_id` column. Add it in Supabase SQL Editor:
+
+```sql
+ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS razorpay_payment_id TEXT;
+```
+
+---
+
 ## ⚡ Deployment to Vercel
 
 The application is equipped with a `vercel.json` rewrite file to ensure React Router paths render smoothly under direct navigation and page reloads.
@@ -93,4 +146,5 @@ The application is equipped with a `vercel.json` rewrite file to ensure React Ro
 4. Add your `.env` variables:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_RAZORPAY_KEY_ID` (use `rzp_live_...` key for production)
 5. Click **Deploy**.
