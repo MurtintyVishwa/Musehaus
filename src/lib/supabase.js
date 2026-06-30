@@ -8,7 +8,11 @@ const MOCK_MODE_SETTING = false;
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-const MOCK_MODE = MOCK_MODE_SETTING || !supabaseUrl || !supabaseAnonKey;
+// Check if credentials are valid (not placeholder values)
+const isValidUrl = supabaseUrl && supabaseUrl.startsWith('http') && !supabaseUrl.includes('your_supabase');
+const isValidKey = supabaseAnonKey && supabaseAnonKey.length > 20 && !supabaseAnonKey.includes('your_supabase');
+
+const MOCK_MODE = MOCK_MODE_SETTING || !isValidUrl || !isValidKey;
 
 if (MOCK_MODE && !MOCK_MODE_SETTING) {
   console.warn(
@@ -217,7 +221,7 @@ export async function getUser() {
 
 // --- ENROLLMENT FUNCTIONS (MOCK/LIVE HELPER) ---
 
-export async function enrollInWorkshop(userId, workshopId, razorpayPaymentId = null) {
+export async function enrollInWorkshop(userId, workshopId, razorpayPaymentId = null, razorpayOrderId = null) {
   if (MOCK_MODE) {
     await delay(450);
     const enrollments = getMockData('enrollments', []);
@@ -255,7 +259,9 @@ export async function enrollInWorkshop(userId, workshopId, razorpayPaymentId = n
       workshop_id: workshopId,
       enrolled_at: new Date().toISOString(),
       payment_status: razorpayPaymentId ? "paid" : "pending",
-      razorpay_payment_id: razorpayPaymentId || null
+      razorpay_payment_id: razorpayPaymentId || null,
+      razorpay_order_id: razorpayOrderId || null,
+      payment_verified: !!razorpayPaymentId
     };
 
     enrollments.push(newEnrollment);
@@ -273,7 +279,9 @@ export async function enrollInWorkshop(userId, workshopId, razorpayPaymentId = n
           user_id: userId,
           workshop_id: workshopId,
           payment_status: razorpayPaymentId ? 'paid' : 'pending',
-          razorpay_payment_id: razorpayPaymentId || null
+          razorpay_payment_id: razorpayPaymentId || null,
+          razorpay_order_id: razorpayOrderId || null,
+          payment_verified: !!razorpayPaymentId
         }
       ])
       .select();

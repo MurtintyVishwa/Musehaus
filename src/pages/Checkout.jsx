@@ -62,64 +62,121 @@ export default function Checkout() {
 
     setPaying(true);
 
-    // ponytail: no backend order creation — amount set client-side.
-    // For production, create a Razorpay order server-side and pass order_id here.
-    const options = {
-      key: RAZORPAY_KEY_ID,
-      amount: price * 100, // paise
-      currency: 'INR',
-      name: 'MuseHaus',
-      description: workshop.title,
-      image: '',
-      // order_id: '<SERVER_GENERATED_ORDER_ID>', // add when you have a backend
-      prefill: {
-        name: user?.full_name || '',
-        email: user?.email || '',
-        contact: user?.phone || '',
-      },
-      config: {
-        display: {
-          blocks: {
-            upi: { name: 'Pay via UPI', instruments: [{ method: 'upi' }] },
-            other: { name: 'Other Methods', instruments: [{ method: 'card' }, { method: 'netbanking' }, { method: 'wallet' }] },
+    try {
+      // Step 1: Create order server-side
+      const orderResponse = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          workshopTitle: workshop.title,
+          option: isCombo ? 'combo' : 'solo'
+        }),
+      });
+
+      const orderData = await orderResponse.json();
+
+      if (!orderResponse.ok) {
+        throw new Error(orderData.error || 'Failed to create order');
+      }
+
+      // Step 2: Open Razorpay checkout with server-generated order
+      const options = {
+        key: RAZORPAY_KEY_ID,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'MuseHaus',
+        description: workshop.title,
+        order_id: orderData.order_id, // Server-generated order ID
+        prefill: {
+          name: user?.full_name || '',
+          email: user?.email || '',
+          contact: user?.phone || '',
+        },
+        config: {
+          display: {
+            blocks: {
+              upi: { name: 'Pay via UPI', instruments: [{ method: 'upi' }] },
+              other: { name: 'Other Methods', instruments: [{ method: 'card' }, { method: 'netbanking' }, { method: 'wallet' }] },
+            },
+            sequence: ['block.upi', 'block.other'],
+            preferences: { show_default_blocks: false },
           },
-          sequence: ['block.upi', 'block.other'],
-          preferences: { show_default_blocks: false },
         },
-      },
-      theme: {
-        color: '#c0623a',
-      },
-      handler: async (response) => {
-        // Payment successful — enroll user
-        const { error } = await enrollInWorkshop(
-          user.id,
-          workshopId,
-          response.razorpay_payment_id
-        );
+        theme: {
+          color: '#c0623a',
+        },
+        handler: async (response) => {
+          console.log('Payment successful, Razorpay response:', response);
+          
+          // Step 3: Verify payment server-side
+          const verifyResponse = await fetch('/api/verify-payment', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
+          });
 
-        if (error) {
-          showToast(error.message || 'Enrollment failed after payment. Contact support.', 'error');
-        } else {
-          showToast('Payment successful! You are enrolled. ✦', 'success');
-          navigate('/');
-        }
-        setPaying(false);
-      },
-      modal: {
-        ondismiss: () => {
+          const verifyData = await verifyResponse.json();
+          console.log('Payment verification result:', verifyData);
+
+          if (!verifyResponse.ok || !verifyData.verified) {
+            showToast('Payment verification failed. Please contact us if money was deducted.', 'error');
+            setPaying(false);
+            return;
+          }
+
+          // Step 4: Payment verified - enroll user
+          const { error } = await enrollInWorkshop(
+            user.id,
+            workshopId,
+            response.razorpay_payment_id,
+            response.razorpay_order_id
+          );
+
+          console.log('Enrollment result:', { error });
+          if (error) {
+            // If already enrolled, still redirect to home with info message
+            if (error.message.includes('already enrolled')) {
+              showToast('Payment successful! You were already enrolled in this workshop. ✦', 'success');
+              console.log('Redirecting to home page...');
+              navigate('/');
+            } else {
+              showToast(error.message || 'Enrollment failed after payment. Contact support.', 'error');
+            }
+          } else {
+            showToast('Payment successful! You are enrolled. ✦', 'success');
+            console.log('Redirecting to home page...');
+            navigate('/');
+          }
           setPaying(false);
-          showToast('Payment cancelled.', 'info');
         },
-      },
-    };
+        modal: {
+          ondismiss: () => {
+            setPaying(false);
+            showToast('Payment cancelled.', 'info');
+          },
+        },
+      };
 
-    const rzp = new window.Razorpay(options);
-    rzp.on('payment.failed', (response) => {
-      showToast(`Payment failed: ${response.error.description}`, 'error');
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (response) => {
+        showToast(`Payment failed: ${response.error.description}`, 'error');
+        setPaying(false);
+      });
+      rzp.open();
+
+    } catch (error) {
+      console.error('Payment error:', error);
+      showToast(error.message || 'Payment failed. Please try again.', 'error');
       setPaying(false);
-    });
-    rzp.open();
+    }
   };
 
   if (loading) {

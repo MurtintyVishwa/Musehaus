@@ -37,6 +37,9 @@ CREATE TABLE IF NOT EXISTS public.enrollments (
     workshop_id INTEGER NOT NULL REFERENCES public.workshops(id) ON DELETE CASCADE,
     enrolled_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     payment_status VARCHAR(50) NOT NULL DEFAULT 'paid',
+    razorpay_payment_id TEXT,
+    razorpay_order_id TEXT,
+    payment_verified BOOLEAN DEFAULT false,
     
     -- Ensure user cannot enroll in the same workshop multiple times
     CONSTRAINT unique_user_workshop UNIQUE (user_id, workshop_id)
