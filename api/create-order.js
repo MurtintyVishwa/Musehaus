@@ -1,11 +1,5 @@
 const Razorpay = require('razorpay');
 
-// Initialize Razorpay with server-side credentials
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
-
 // Workshop pricing configuration (server-side only, never trust frontend amounts)
 const WORKSHOP_PRICES = {
   'Paint & Create: Moulds + Mini Easels': {
@@ -21,6 +15,24 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Validate environment variables
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+
+    if (!keyId || !keySecret) {
+      console.error('Missing Razorpay credentials:', { hasKeyId: !!keyId, hasKeySecret: !!keySecret });
+      return res.status(500).json({ 
+        error: 'Server configuration error: Missing Razorpay credentials',
+        details: 'RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET must be set in Vercel environment variables'
+      });
+    }
+
+    // Initialize Razorpay client (inside handler to catch initialization errors)
+    const razorpay = new Razorpay({
+      key_id: keyId,
+      key_secret: keySecret,
+    });
+
     const { workshopTitle, option } = req.body;
 
     // Validate required fields
@@ -63,7 +75,10 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Error creating Razorpay order:', error);
-    res.status(500).json({ error: 'Failed to create order. Please try again.' });
+    console.error('create-order error:', error);
+    res.status(500).json({ 
+      error: error.message || 'Failed to create order. Please try again.',
+      details: error.toString()
+    });
   }
 }

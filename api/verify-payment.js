@@ -17,7 +17,11 @@ export default async function handler(req, res) {
     // Get the key secret from environment variables
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
     if (!keySecret) {
-      return res.status(500).json({ error: 'Server configuration error' });
+      console.error('Missing RAZORPAY_KEY_SECRET in environment variables');
+      return res.status(500).json({ 
+        error: 'Server configuration error: Missing RAZORPAY_KEY_SECRET',
+        details: 'RAZORPAY_KEY_SECRET must be set in Vercel environment variables'
+      });
     }
 
     // Generate HMAC SHA256 signature
@@ -36,7 +40,10 @@ export default async function handler(req, res) {
     }
 
   } catch (error) {
-    console.error('Error verifying payment:', error);
-    res.status(500).json({ error: 'Failed to verify payment. Please try again.' });
+    console.error('verify-payment error:', error);
+    res.status(500).json({ 
+      error: error.message || 'Failed to verify payment. Please try again.',
+      details: error.toString()
+    });
   }
 }
