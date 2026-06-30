@@ -1,4 +1,4 @@
-const Razorpay = require('razorpay');
+import Razorpay from 'razorpay';
 
 // Workshop pricing configuration (server-side only, never trust frontend amounts)
 const WORKSHOP_PRICES = {
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
 
     if (!keyId || !keySecret) {
       console.error('Missing Razorpay credentials:', { hasKeyId: !!keyId, hasKeySecret: !!keySecret });
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Server configuration error: Missing Razorpay credentials',
         details: 'RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET must be set in Vercel environment variables'
       });
@@ -76,7 +76,7 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('create-order error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: error.message || 'Failed to create order. Please try again.',
       details: error.toString()
     });
