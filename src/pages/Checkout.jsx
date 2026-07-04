@@ -156,14 +156,16 @@ export default function Checkout() {
             console.log('Redirecting to home page...');
 
             // Send confirmation email asynchronously (silent logging on failure)
-            sendBookingEmail({
+            const emailParams = {
               toName: user.full_name || 'Art Lover',
               toEmail: user.email,
               workshopTitle: workshop.title,
               workshopDate: `${workshop.date} at ${workshop.time}`,
               amountPaid: price.toString(),
               paymentId: response.razorpay_payment_id
-            }).catch((err) => {
+            };
+            console.log('[Checkout] Sending booking email with params:', emailParams);
+            sendBookingEmail(emailParams).catch((err) => {
               console.error('[Checkout] Failed to trigger sendBookingEmail:', err);
             });
 
