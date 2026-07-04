@@ -59,7 +59,7 @@ export default function Contact() {
     {
       icon: <Mail className="text-terra" size={18} />,
       label: "Email",
-      content: "musehaus997866@gmail.com"
+      content: "musehaus14@gmail.com"
     },
     {
       icon: <Clock className="text-terra" size={18} />,

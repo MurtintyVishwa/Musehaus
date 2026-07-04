@@ -92,7 +92,7 @@ const Footer = () => {
             <p>Visakhapatnam</p>
             <p className="mt-2 text-cream font-medium">Tue – Sun: 9 AM – 7:30 PM</p>
             <p className="mt-1 hover:text-terra transition-colors duration-200">
-              <a href="mailto:musehaus997866@gmail.com">musehaus997866@gmail.com</a>
+              <a href="mailto:musehaus14@gmail.com">musehaus14@gmail.com</a>
             </p>
             <p><a href="tel:+918309978539" className="hover:text-terra transition-colors duration-200">+91 83099 78539</a></p>
           </address>

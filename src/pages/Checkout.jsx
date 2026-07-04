@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { enrollInWorkshop, getWorkshops } from '../lib/supabase';
 import { ArrowLeft, ShieldCheck, CreditCard } from 'lucide-react';
+import { sendBookingEmail } from '../lib/email';
 
 const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID || 'YOUR_RAZORPAY_KEY_ID';
 
@@ -153,6 +154,19 @@ export default function Checkout() {
           } else {
             showToast('Payment successful! You are enrolled. ✦', 'success');
             console.log('Redirecting to home page...');
+
+            // Send confirmation email asynchronously (silent logging on failure)
+            sendBookingEmail({
+              toName: user.full_name || 'Art Lover',
+              toEmail: user.email,
+              workshopTitle: workshop.title,
+              workshopDate: `${workshop.date} at ${workshop.time}`,
+              amountPaid: price.toString(),
+              paymentId: response.razorpay_payment_id
+            }).catch((err) => {
+              console.error('[Checkout] Failed to trigger sendBookingEmail:', err);
+            });
+
             navigate('/');
           }
           setPaying(false);
