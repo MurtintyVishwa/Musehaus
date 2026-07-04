@@ -85,14 +85,14 @@ export default function Workshops() {
             {/* CTA Buttons */}
             <div className="mt-2 flex flex-col sm:flex-row gap-3">
               <Link
-                to="/checkout?workshop=1"
+                to="/checkout?workshop=7"
                 className="inline-flex items-center gap-2 bg-terra hover:bg-terra/90 text-cream text-xs uppercase tracking-[0.2em] font-bold px-8 py-4 rounded-sm transition-all duration-300 shadow-xl shadow-terra/20 border border-terra/20 group"
               >
                 <span>Book — ₹499</span>
                 <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
-                to="/checkout?workshop=1&combo=true"
+                to="/checkout?workshop=7&combo=true"
                 className="inline-flex items-center gap-2 bg-transparent hover:bg-terra/10 text-terra text-xs uppercase tracking-[0.2em] font-bold px-8 py-4 rounded-sm transition-all duration-300 border border-terra/40 group"
               >
                 <span>Combo (2) — ₹799</span>
