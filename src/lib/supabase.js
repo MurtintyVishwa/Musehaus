@@ -314,7 +314,7 @@ export async function checkExistingEnrollment(userId, workshopId) {
   } else {
     const { data, error } = await supabase
       .from('enrollments')
-      .select('id, razorpay_payment_id, created_at')
+      .select('id, razorpay_payment_id, enrolled_at')
       .eq('user_id', userId)
       .eq('workshop_id', workshopId)
       .maybeSingle();
