@@ -45,16 +45,18 @@ export default function Checkout() {
     }
     
     setLoading(true);
+    console.log("Checking existing enrollment for user:", user?.id, "workshopId:", workshopId, "type of workshopId:", typeof workshopId);
     Promise.all([
       getWorkshops(),
       checkExistingEnrollment(user.id, workshopId)
-    ]).then(([{ data: wsData }, { data: enrollData }]) => {
+    ]).then(([{ data: wsData }, { data: enrollData, error: enrollError }]) => {
+      console.log("Existing enrollment check returned data:", enrollData, "error:", enrollError);
       const found = wsData?.find((w) => w.id === workshopId);
       setWorkshop(found || null);
       setExistingEnrollment(enrollData || null);
       setLoading(false);
     }).catch(err => {
-      console.error(err);
+      console.error("Error during checkout load checks:", err);
       setLoading(false);
     });
   }, [workshopId, user]);
