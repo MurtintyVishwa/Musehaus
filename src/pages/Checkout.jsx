@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { enrollInWorkshop, getWorkshops } from '../lib/supabase';
+import { enrollInWorkshop, getWorkshops, checkExistingEnrollment } from '../lib/supabase';
 import { ArrowLeft, ShieldCheck, CreditCard } from 'lucide-react';
 import { sendBookingEmail } from '../lib/email';
 
@@ -33,20 +33,31 @@ export default function Checkout() {
   const isCombo = searchParams.get('combo') === 'true';
 
   const [workshop, setWorkshop] = useState(null);
+  const [existingEnrollment, setExistingEnrollment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     if (!user) {
+      showToast('Please sign in to complete your booking', 'info');
       navigate(`/login?redirect=/checkout?workshop=${workshopId}${isCombo ? '&combo=true' : ''}`);
       return;
     }
-    getWorkshops().then(({ data }) => {
-      const found = data?.find((w) => w.id === workshopId);
+    
+    setLoading(true);
+    Promise.all([
+      getWorkshops(),
+      checkExistingEnrollment(user.id, workshopId)
+    ]).then(([{ data: wsData }, { data: enrollData }]) => {
+      const found = wsData?.find((w) => w.id === workshopId);
       setWorkshop(found || null);
+      setExistingEnrollment(enrollData || null);
+      setLoading(false);
+    }).catch(err => {
+      console.error(err);
       setLoading(false);
     });
-  }, [workshopId]);
+  }, [workshopId, user]);
 
   const price = isCombo ? 799 : (workshop?.price || 499);
   const displayPrice = isCombo ? '₹799' : `₹${workshop?.price || 499}`;
@@ -207,6 +218,59 @@ export default function Checkout() {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
         <p className="text-muted font-light text-sm">Workshop not found.</p>
+      </div>
+    );
+  }
+
+  if (existingEnrollment) {
+    return (
+      <div className="min-h-screen bg-cream text-ink pb-24">
+        {/* Header */}
+        <header className="bg-ink text-cream py-14 px-6 md:px-12 text-center">
+          <div className="max-w-2xl mx-auto flex flex-col items-center gap-3">
+            <span className="text-gold text-xs uppercase tracking-[0.25em] font-semibold">Booking Confirmed</span>
+            <h1 className="font-serif text-4xl md:text-5xl font-light tracking-wide">
+              Already <span className="italic text-terra">Registered</span>
+            </h1>
+          </div>
+        </header>
+
+        <main className="max-w-xl mx-auto px-6 md:px-8 mt-12">
+          <div className="bg-white border border-ink/10 rounded-xl shadow-lg p-8 flex flex-col items-center text-center gap-6">
+            <div className="text-6xl animate-bounce">🎨</div>
+            
+            <div className="flex flex-col gap-2">
+              <h2 className="font-serif text-2xl md:text-3xl font-medium text-ink">
+                You're already registered!
+              </h2>
+              <p className="text-sm text-muted font-light leading-relaxed">
+                We have your spot saved for the <span className="font-semibold text-ink">{workshop.title}</span> workshop on <span className="font-semibold text-ink">{workshop.date}</span>. We can't wait to see you! 🤍
+              </p>
+            </div>
+
+            {existingEnrollment.razorpay_payment_id && (
+              <div className="w-full bg-cream/60 rounded-lg p-4 text-xs text-muted font-mono select-all">
+                <span className="block font-sans font-semibold text-ink/75 mb-1">Booking Reference ID:</span>
+                {existingEnrollment.razorpay_payment_id}
+              </div>
+            )}
+
+            <div className="w-full flex flex-col sm:flex-row gap-4 mt-2">
+              <Link
+                to="/"
+                className="flex-grow sm:flex-grow-0 bg-transparent hover:bg-ink/5 text-ink border border-ink/35 text-xs uppercase tracking-[0.2em] font-bold py-4 rounded-sm transition-all duration-300 text-center flex-1"
+              >
+                Back to Home
+              </Link>
+              <Link
+                to="/workshops"
+                className="flex-grow sm:flex-grow-0 bg-terra hover:bg-terra/90 text-cream text-xs uppercase tracking-[0.2em] font-bold py-4 rounded-sm transition-all duration-300 text-center flex-1 shadow-md"
+              >
+                View Workshops
+              </Link>
+            </div>
+          </div>
+        </main>
       </div>
     );
   }

@@ -305,3 +305,19 @@ export async function getUserEnrollments(userId) {
     return { data, error };
   }
 }
+
+export async function checkExistingEnrollment(userId, workshopId) {
+  if (MOCK_MODE) {
+    const enrollments = getMockData('enrollments', []);
+    const found = enrollments.find(e => e.user_id === userId && e.workshop_id === workshopId);
+    return { data: found || null, error: null };
+  } else {
+    const { data, error } = await supabase
+      .from('enrollments')
+      .select('id, razorpay_payment_id, created_at')
+      .eq('user_id', userId)
+      .eq('workshop_id', workshopId)
+      .maybeSingle();
+    return { data, error };
+  }
+}
