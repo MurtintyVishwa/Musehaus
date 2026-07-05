@@ -45,10 +45,10 @@ export default function Checkout() {
     }
     
     setLoading(true);
-    console.log("Checking existing enrollment for user:", user?.id, "workshopId:", workshopId, "type of workshopId:", typeof workshopId);
+    console.log("Checking existing enrollment for user:", user?.id, "workshopId:", workshopId, "isCombo:", isCombo);
     Promise.all([
       getWorkshops(),
-      checkExistingEnrollment(user.id, workshopId)
+      checkExistingEnrollment(user.id, workshopId, isCombo)
     ]).then(([{ data: wsData }, { data: enrollData, error: enrollError }]) => {
       console.log("Existing enrollment check returned data:", enrollData, "error:", enrollError);
       const found = wsData?.find((w) => w.id === workshopId);
@@ -59,7 +59,7 @@ export default function Checkout() {
       console.error("Error during checkout load checks:", err);
       setLoading(false);
     });
-  }, [workshopId, user]);
+  }, [workshopId, isCombo, user]);
 
   const price = isCombo ? 799 : (workshop?.price || 499);
   const displayPrice = isCombo ? '₹799' : `₹${workshop?.price || 499}`;
@@ -151,7 +151,8 @@ export default function Checkout() {
             user.id,
             workshopId,
             response.razorpay_payment_id,
-            response.razorpay_order_id
+            response.razorpay_order_id,
+            isCombo
           );
 
           console.log('Enrollment result:', { error });

@@ -221,14 +221,14 @@ export async function getUser() {
 
 // --- ENROLLMENT FUNCTIONS (MOCK/LIVE HELPER) ---
 
-export async function enrollInWorkshop(userId, workshopId, razorpayPaymentId = null, razorpayOrderId = null) {
+export async function enrollInWorkshop(userId, workshopId, razorpayPaymentId = null, razorpayOrderId = null, isCombo = false) {
   if (MOCK_MODE) {
     await delay(450);
     const enrollments = getMockData('enrollments', []);
     const workshops = getMockData('workshops', DEFAULT_WORKSHOPS);
 
-    // Check if already enrolled
-    const exists = enrollments.find(e => e.user_id === userId && e.workshop_id === workshopId);
+    // Check if already enrolled with the same option (solo vs combo are treated separately)
+    const exists = enrollments.find(e => e.user_id === userId && e.workshop_id === workshopId && !!e.is_combo === !!isCombo);
     if (exists) {
       return { data: null, error: { message: "You are already enrolled in this workshop." } };
     }
@@ -257,6 +257,7 @@ export async function enrollInWorkshop(userId, workshopId, razorpayPaymentId = n
       id: `enr_${Math.random().toString(36).substr(2, 9)}`,
       user_id: userId,
       workshop_id: workshopId,
+      is_combo: isCombo,
       enrolled_at: new Date().toISOString(),
       payment_status: razorpayPaymentId ? "paid" : "pending",
       razorpay_payment_id: razorpayPaymentId || null,
@@ -278,6 +279,7 @@ export async function enrollInWorkshop(userId, workshopId, razorpayPaymentId = n
         {
           user_id: userId,
           workshop_id: workshopId,
+          is_combo: isCombo,
           payment_status: razorpayPaymentId ? 'paid' : 'pending',
           razorpay_payment_id: razorpayPaymentId || null,
           razorpay_order_id: razorpayOrderId || null,
@@ -306,17 +308,19 @@ export async function getUserEnrollments(userId) {
   }
 }
 
-export async function checkExistingEnrollment(userId, workshopId) {
+export async function checkExistingEnrollment(userId, workshopId, isCombo = false) {
   if (MOCK_MODE) {
     const enrollments = getMockData('enrollments', []);
-    const found = enrollments.find(e => e.user_id === userId && e.workshop_id === workshopId);
+    // Match on workshop AND option type (solo vs combo are separate)
+    const found = enrollments.find(e => e.user_id === userId && e.workshop_id === workshopId && !!e.is_combo === !!isCombo);
     return { data: found || null, error: null };
   } else {
     const { data, error } = await supabase
       .from('enrollments')
-      .select('id, razorpay_payment_id, enrolled_at')
+      .select('id, razorpay_payment_id, enrolled_at, is_combo')
       .eq('user_id', userId)
       .eq('workshop_id', workshopId)
+      .eq('is_combo', isCombo)
       .maybeSingle();
     return { data, error };
   }
