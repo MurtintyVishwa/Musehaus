@@ -257,16 +257,16 @@ export default function Checkout() {
               </div>
             )}
 
-            <div className="w-full flex flex-col sm:flex-row gap-4 mt-2">
+            <div className="w-full flex flex-col sm:flex-row gap-4 mt-4 justify-center">
               <Link
                 to="/"
-                className="flex-grow sm:flex-grow-0 bg-transparent hover:bg-ink/5 text-ink border border-ink/35 text-xs uppercase tracking-[0.2em] font-bold py-4 rounded-sm transition-all duration-300 text-center flex-1"
+                className="w-full sm:w-1/2 bg-transparent hover:bg-ink/5 text-ink border border-ink/30 text-xs uppercase tracking-[0.15em] font-bold py-4 rounded-sm transition-all duration-300 text-center select-none"
               >
                 Back to Home
               </Link>
               <Link
                 to="/workshops"
-                className="flex-grow sm:flex-grow-0 bg-terra hover:bg-terra/90 text-cream text-xs uppercase tracking-[0.2em] font-bold py-4 rounded-sm transition-all duration-300 text-center flex-1 shadow-md"
+                className="w-full sm:w-1/2 bg-terra hover:bg-terra/90 text-cream text-xs uppercase tracking-[0.15em] font-bold py-4 rounded-sm transition-all duration-300 text-center select-none shadow-md shadow-terra/10 border border-terra/20"
               >
                 View Workshops
               </Link>
