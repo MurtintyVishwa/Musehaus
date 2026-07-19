@@ -211,7 +211,7 @@ export default function Checkout() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
+      <div className="min-h-screen pt-16 bg-cream flex items-center justify-center">
         <p className="text-muted font-light text-sm">Loading...</p>
       </div>
     );
@@ -219,7 +219,7 @@ export default function Checkout() {
 
   if (!workshop) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center">
+      <div className="min-h-screen pt-16 bg-cream flex items-center justify-center">
         <p className="text-muted font-light text-sm">Workshop not found.</p>
       </div>
     );
@@ -227,7 +227,7 @@ export default function Checkout() {
 
   if (existingEnrollment) {
     return (
-      <div className="min-h-screen bg-cream text-ink pb-24">
+      <div className="min-h-screen pt-16 bg-cream text-ink pb-24">
         {/* Header */}
         <header className="bg-ink text-cream py-14 px-6 md:px-12 text-center">
           <div className="max-w-2xl mx-auto flex flex-col items-center gap-3">
@@ -279,7 +279,7 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-cream text-ink pb-24">
+    <div className="min-h-screen pt-16 bg-cream text-ink pb-24">
       {/* Header */}
       <header className="bg-ink text-cream py-14 px-6 md:px-12 text-center">
         <div className="max-w-2xl mx-auto flex flex-col items-center gap-3">

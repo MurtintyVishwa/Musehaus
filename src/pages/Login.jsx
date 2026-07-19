@@ -2,8 +2,20 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { enrollInWorkshop } from '../lib/supabase';
-import { Eye, EyeOff, Sparkles } from 'lucide-react';
+import { enrollInWorkshop, supabase } from '../lib/supabase';
+import { Eye, EyeOff, Sparkles, X } from 'lucide-react';
+
+// Google colored G SVG icon
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+      <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+      <path d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z" fill="#FBBC05"/>
+      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 6.294C4.672 4.169 6.656 3.58 9 3.58z" fill="#EA4335"/>
+    </svg>
+  );
+}
 
 export default function Login() {
   const { signIn } = useAuth();
@@ -21,6 +33,12 @@ export default function Login() {
   const [errors, setErrors] = useState({});
   const [showPwd, setShowPwd] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // --- FIX 4: Forgot password state ---
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
 
   // Form Validation
   const validateForm = () => {
@@ -55,7 +73,7 @@ export default function Login() {
     if (success) {
       showToast("Welcome back to MuseHaus ✦", "success");
       
-      // If they came from a workshop registration flow, automatically enroll them!
+      // If they came from a workshop registration flow, automatically enroll them
       if (targetWorkshopId) {
         try {
           const session = JSON.parse(localStorage.getItem('musehaus_session'));
@@ -73,6 +91,36 @@ export default function Login() {
       }, 1500);
     } else {
       setIsSubmitting(false);
+    }
+  };
+
+  // --- FIX 4: Forgot password handler ---
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(forgotEmail)) {
+      showToast("Please enter a valid email address.", "error");
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      if (supabase) {
+        const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+          redirectTo: 'https://musehaus.vercel.app/reset-password'
+        });
+        if (error) {
+          showToast("Email not found. Please check and try again.", "error");
+        } else {
+          setForgotSent(true);
+        }
+      } else {
+        // Mock mode fallback
+        setForgotSent(true);
+      }
+    } catch (err) {
+      showToast("Something went wrong. Please try again.", "error");
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -105,7 +153,7 @@ export default function Login() {
         {/* Quote */}
         <div className="z-10 border-l-2 border-gold/30 pl-6">
           <blockquote className="font-serif text-sm lg:text-base text-gold italic leading-relaxed font-light">
-            “Every artist dips his brush in his own soul and paints his own nature into his pictures.”
+            "Every artist dips his brush in his own soul and paints his own nature into his pictures."
           </blockquote>
           <cite className="block text-[10px] uppercase tracking-wider text-muted font-semibold mt-2 not-italic font-sans">
             — Henry Ward Beecher
@@ -183,9 +231,10 @@ export default function Login() {
                 <span>Remember Me</span>
               </label>
               
+              {/* FIX 4: Open forgot password modal instead of simulated toast */}
               <button
                 type="button"
-                onClick={() => showToast("Password recovery email sent (simulated). ✦", "success")}
+                onClick={() => { setShowForgotModal(true); setForgotSent(false); setForgotEmail(''); }}
                 className="text-terra hover:underline font-medium"
               >
                 Forgot password?
@@ -205,30 +254,22 @@ export default function Login() {
             <div className="relative flex items-center justify-center my-2 select-none">
               <div className="w-full border-t border-ink/10" />
               <span className="absolute bg-cream px-3 text-[10px] uppercase tracking-widest text-muted font-bold font-sans">
-                or continue with
+                or
               </span>
             </div>
 
-            {/* Third party buttons */}
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                onClick={() => showToast("Google authentication is disabled in mock mode.", "info")}
-                className="bg-transparent hover:bg-ink/5 border border-ink/15 hover:border-ink/30 text-xs font-semibold py-3 rounded-sm flex items-center justify-center gap-2 transition-colors select-none"
-              >
-                <span className="font-bold">G</span>oogle
-              </button>
-              <button
-                type="button"
-                onClick={() => showToast("Apple authentication is disabled in mock mode.", "info")}
-                className="bg-transparent hover:bg-ink/5 border border-ink/15 hover:border-ink/30 text-xs font-semibold py-3 rounded-sm flex items-center justify-center gap-2 transition-colors select-none"
-              >
-                <span className="font-bold">A</span>pple
-              </button>
-            </div>
+            {/* FIX 3: Single Google button, no Apple button */}
+            <button
+              type="button"
+              onClick={() => showToast("Google sign-in coming soon.", "info")}
+              className="w-full bg-white hover:bg-gray-50 border border-ink/15 hover:border-ink/30 text-sm font-medium py-3 rounded-sm flex items-center justify-center gap-3 transition-colors select-none shadow-sm text-ink"
+            >
+              <GoogleIcon />
+              <span>Continue with Google</span>
+            </button>
 
             {/* Link to Register */}
-            <p className="text-center text-xs text-muted mt-4 select-none">
+            <p className="text-center text-xs text-muted mt-2 select-none">
               New to MuseHaus?{' '}
               <Link 
                 to={targetWorkshopId ? `/register?workshop=${targetWorkshopId}` : "/register"} 
@@ -242,6 +283,63 @@ export default function Login() {
 
         </div>
       </div>
+
+      {/* FIX 4: Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 bg-ink/60 backdrop-blur-sm flex items-center justify-center z-50 px-4">
+          <div className="bg-cream w-full max-w-md rounded-xl shadow-2xl p-8 relative">
+            <button
+              onClick={() => setShowForgotModal(false)}
+              className="absolute top-4 right-4 text-muted hover:text-ink transition-colors"
+            >
+              <X size={18} />
+            </button>
+
+            {forgotSent ? (
+              <div className="flex flex-col items-center text-center gap-4 py-4">
+                <div className="text-4xl">📬</div>
+                <h2 className="font-serif text-2xl font-medium text-ink">Check your inbox</h2>
+                <p className="text-sm text-muted font-light leading-relaxed">
+                  Password reset email sent! Please check your inbox and follow the link to reset your password.
+                </p>
+                <button
+                  onClick={() => setShowForgotModal(false)}
+                  className="mt-2 w-full bg-terra hover:bg-terra/90 text-cream text-xs uppercase tracking-widest font-bold py-3 rounded-sm transition-all duration-300"
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <>
+                <h2 className="font-serif text-2xl font-medium text-ink mb-1">Reset Password</h2>
+                <p className="text-xs text-muted font-light mb-6">
+                  Enter your account email and we'll send you a link to reset your password.
+                </p>
+                <form onSubmit={handleForgotPassword} className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-muted">Email Address</label>
+                    <input
+                      type="email"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      className="bg-warm/25 border border-ink/10 focus:border-terra rounded-sm px-4 py-3 text-sm focus:outline-none transition-colors"
+                      required
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={forgotLoading}
+                    className="w-full bg-terra hover:bg-terra/90 disabled:opacity-60 text-cream text-xs uppercase tracking-widest font-bold py-3 rounded-sm transition-all duration-300 shadow-md"
+                  >
+                    {forgotLoading ? 'Sending...' : 'Send Reset Link'}
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );

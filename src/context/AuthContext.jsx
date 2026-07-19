@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
-  getUser as apiGetUser, 
   signIn as apiSignIn, 
   signUp as apiSignUp, 
-  signOut as apiSignOut 
+  signOut as apiSignOut,
+  supabase
 } from '../lib/supabase';
 import { useToast } from './ToastContext';
 
@@ -14,22 +14,55 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const { showToast } = useToast();
 
-  // Load user session on mount
   useEffect(() => {
-    async function loadSession() {
-      try {
-        const { data, error } = await apiGetUser();
-        if (data?.user) {
-          setUser(data.user);
+    // --- FIX 2: Proper session restoration on refresh ---
+    // For live Supabase: use onAuthStateChange which fires immediately with current session
+    if (supabase) {
+      // Get existing session on mount
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          setUser(normalizeUser(session.user));
         }
-      } catch (err) {
-        console.error("Error loading user session:", err);
-      } finally {
         setLoading(false);
+      });
+
+      // Listen for auth state changes (login, logout, token refresh)
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.user) {
+          setUser(normalizeUser(session.user));
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
+      });
+
+      return () => subscription.unsubscribe();
+    } else {
+      // Mock mode: restore from localStorage
+      try {
+        const session = localStorage.getItem('musehaus_session');
+        const parsed = session ? JSON.parse(session) : null;
+        setUser(parsed || null);
+      } catch {
+        setUser(null);
       }
+      setLoading(false);
     }
-    loadSession();
   }, []);
+
+  // Normalize Supabase user object to a flat structure
+  const normalizeUser = (supabaseUser) => {
+    if (!supabaseUser) return null;
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email,
+      full_name: supabaseUser.user_metadata?.full_name || '',
+      phone: supabaseUser.user_metadata?.phone || '',
+      interests: supabaseUser.user_metadata?.interests || [],
+      avatar_url: supabaseUser.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${supabaseUser.id}`,
+      created_at: supabaseUser.created_at
+    };
+  };
 
   const signIn = async (email, password) => {
     setLoading(true);
@@ -39,7 +72,9 @@ export const AuthProvider = ({ children }) => {
         showToast(error.message || "Failed to sign in.", "error");
         return { success: false, error };
       }
-      setUser(data.user);
+      // onAuthStateChange will set the user automatically in live mode
+      // For mock mode, set it manually
+      if (!supabase) setUser(data.user);
       showToast(`Welcome back, ${data.user.full_name || 'Artisan'}!`, "success");
       return { success: true };
     } catch (err) {
@@ -58,12 +93,12 @@ export const AuthProvider = ({ children }) => {
         showToast(error.message || "Failed to sign up.", "error");
         return { success: false, error };
       }
-      // If we got a user back (or auto-logged in)
-      if (data?.user) {
+      // In live mode with email confirmation, data.session is null until confirmed
+      // In mock mode or if email confirmation is off, session is returned immediately
+      if (data?.user && !supabase) {
         setUser(data.user);
       }
-      showToast("Account created successfully! Welcome to MuseHaus.", "success");
-      return { success: true };
+      return { success: true, requiresEmailConfirmation: supabase && !data?.session };
     } catch (err) {
       showToast("An unexpected error occurred during sign up.", "error");
       return { success: false, error: err };

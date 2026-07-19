@@ -142,6 +142,7 @@ export async function signUp(email, password, fullName, phone, interests = []) {
       email,
       password,
       options: {
+        emailRedirectTo: 'https://musehaus.vercel.app/login',
         data: {
           full_name: fullName,
           phone,

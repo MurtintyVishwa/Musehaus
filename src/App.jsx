@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Contact from './pages/Contact';
 import Story from './pages/Story';
 import Checkout from './pages/Checkout';
+import ResetPassword from './pages/ResetPassword';
 
 // Context Providers
 import { ToastProvider } from './context/ToastContext';
@@ -33,6 +34,7 @@ function App() {
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/story" element={<Story />} />
                 <Route path="/checkout" element={<Checkout />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
               </Routes>
             </main>
 
