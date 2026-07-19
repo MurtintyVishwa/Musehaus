@@ -21,15 +21,18 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 h-16 bg-cream/96 backdrop-blur-sm border-b border-ink/10 flex items-center justify-between px-6 md:px-12 transition-all">
+    <nav 
+      className="sticky top-0 z-50 h-16 backdrop-blur-sm border-b border-ink/10 flex items-center justify-between px-6 md:px-12 transition-all"
+      style={{ backgroundColor: 'rgba(245, 240, 232, 0.96)' }}
+    >
       {/* Left: Logo */}
       <Link 
         to="/" 
         onClick={closeMenu}
         className="font-serif text-2xl tracking-wide font-semibold select-none flex items-center gap-1 flex-shrink-0 whitespace-nowrap"
       >
-        <span className="text-ink">Muse</span>
-        <span className="text-terra">Haus</span>
+        <span className="text-ink" style={{ color: '#1a1a18' }}>Muse</span>
+        <span className="text-terra" style={{ color: '#c0623a' }}>Haus</span>
       </Link>
 
       {/* Center: Navigation Links (Desktop) */}

@@ -10,6 +10,7 @@ import Contact from './pages/Contact';
 import Story from './pages/Story';
 import Checkout from './pages/Checkout';
 import ResetPassword from './pages/ResetPassword';
+import ScrollToTop from './components/ScrollToTop';
 
 // Context Providers
 import { ToastProvider } from './context/ToastContext';
@@ -18,6 +19,7 @@ import { AuthProvider } from './context/AuthContext';
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <ToastProvider>
         <AuthProvider>
           <div className="flex flex-col min-h-screen bg-cream text-ink select-none font-sans">
