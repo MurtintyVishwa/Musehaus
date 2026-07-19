@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { enrollInWorkshop } from '../lib/supabase';
+import { enrollInWorkshop, supabase } from '../lib/supabase';
 import { Eye, EyeOff, Sparkles } from 'lucide-react';
 
 // Google colored G SVG icon
@@ -42,6 +42,23 @@ export default function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Input Handlers
+  // Input Handlers
+  const handleGoogleSignIn = async () => {
+    if (!supabase) {
+      showToast("Google sign-in is disabled in mock mode.", "info");
+      return;
+    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: 'https://musehaus.vercel.app'
+      }
+    });
+    if (error) {
+      showToast('Google sign-in failed. Please try again.', 'error');
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -348,7 +365,7 @@ export default function Register() {
             {/* Third party buttons */}
             <button
               type="button"
-              onClick={() => showToast("Google sign-in coming soon.", "info")}
+              onClick={handleGoogleSignIn}
               className="w-full bg-white hover:bg-gray-50 border border-ink/15 hover:border-ink/30 text-sm font-medium py-3 rounded-sm flex items-center justify-center gap-3 transition-colors select-none shadow-sm text-ink"
             >
               <GoogleIcon />

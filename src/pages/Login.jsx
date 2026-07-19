@@ -124,6 +124,22 @@ export default function Login() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    if (!supabase) {
+      showToast("Google sign-in is disabled in mock mode.", "info");
+      return;
+    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: 'https://musehaus.vercel.app'
+      }
+    });
+    if (error) {
+      showToast('Google sign-in failed. Please try again.', 'error');
+    }
+  };
+
   return (
     <div className="min-h-screen flex">
       
@@ -261,7 +277,7 @@ export default function Login() {
             {/* FIX 3: Single Google button, no Apple button */}
             <button
               type="button"
-              onClick={() => showToast("Google sign-in coming soon.", "info")}
+              onClick={handleGoogleSignIn}
               className="w-full bg-white hover:bg-gray-50 border border-ink/15 hover:border-ink/30 text-sm font-medium py-3 rounded-sm flex items-center justify-center gap-3 transition-colors select-none shadow-sm text-ink"
             >
               <GoogleIcon />

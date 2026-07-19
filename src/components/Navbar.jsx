@@ -21,14 +21,14 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="sticky top-0 z-40 h-16 bg-cream/96 backdrop-blur-sm border-b border-ink/10 flex items-center justify-between px-6 md:px-12 transition-all">
+    <nav className="sticky top-0 z-50 h-16 bg-cream/96 backdrop-blur-sm border-b border-ink/10 flex items-center justify-between px-6 md:px-12 transition-all">
       {/* Left: Logo */}
       <Link 
         to="/" 
         onClick={closeMenu}
-        className="font-serif text-2xl tracking-wide font-semibold text-ink select-none flex items-center gap-1"
+        className="font-serif text-2xl tracking-wide font-semibold select-none flex items-center gap-1 flex-shrink-0 whitespace-nowrap"
       >
-        <span>Muse</span>
+        <span className="text-ink">Muse</span>
         <span className="text-terra">Haus</span>
       </Link>
 
