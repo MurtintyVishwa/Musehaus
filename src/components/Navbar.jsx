@@ -35,7 +35,7 @@ const Navbar = () => {
     { name: 'Contact', path: '/contact' }
   ];
 
-  const displayedLinks = isAdminRoute 
+  const displayedLinks = isAdminLoggedIn 
     ? navLinks.filter(link => link.name !== 'Home')
     : navLinks;
 

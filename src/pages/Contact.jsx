@@ -90,7 +90,7 @@ export default function Contact() {
       </header>
 
       {/* SECTION 2 — Two-Column Content Grid */}
-      <main className="max-w-7xl mx-auto px-6 md:px-12 mt-16 grid grid-cols-1 lg:grid-cols-2 gap-16">
+      <main className="max-w-5xl mx-auto px-6 md:px-12 mt-16 grid grid-cols-1 lg:grid-cols-2 gap-16">
         
         {/* LEFT COLUMN: Studio Info */}
         <div className="flex flex-col gap-10">
