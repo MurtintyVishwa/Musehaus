@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -20,6 +20,13 @@ const Navbar = () => {
 
   const isActive = (path) => location.pathname === path;
   const isAdminRoute = location.pathname === '/admin';
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(
+    () => sessionStorage.getItem('musehaus_admin_logged_in') === 'true'
+  );
+
+  useEffect(() => {
+    setIsAdminLoggedIn(sessionStorage.getItem('musehaus_admin_logged_in') === 'true');
+  }, [location]);
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -92,6 +99,15 @@ const Navbar = () => {
               <span>Sign Out</span>
             </button>
           </div>
+        ) : isAdminLoggedIn ? (
+          !isAdminRoute ? (
+            <Link
+              to="/admin"
+              className="bg-terra hover:bg-terra/90 text-cream text-xs uppercase tracking-[0.15em] font-medium px-5 py-2.5 rounded-sm transition-all duration-300 shadow-md border border-terra/20"
+            >
+              Back to Dashboard
+            </Link>
+          ) : null
         ) : (
           <>
             <Link
@@ -164,6 +180,16 @@ const Navbar = () => {
               <span>Sign Out</span>
             </button>
           </div>
+        ) : isAdminLoggedIn ? (
+          !isAdminRoute ? (
+            <Link
+              to="/admin"
+              onClick={closeMenu}
+              className="w-full bg-terra hover:bg-terra/90 text-cream text-xs uppercase tracking-[0.15em] font-medium text-center py-3 rounded-sm transition-colors shadow-md border border-terra/20"
+            >
+              Back to Dashboard
+            </Link>
+          ) : null
         ) : (
           <div className="w-full flex flex-col gap-3">
             <Link
