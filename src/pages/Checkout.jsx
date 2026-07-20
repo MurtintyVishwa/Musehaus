@@ -3,8 +3,12 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { enrollInWorkshop, getWorkshops, checkExistingEnrollment } from '../lib/supabase';
-import { ArrowLeft, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, CheckCircle2, QrCode, Smartphone, Info } from 'lucide-react';
 import { sendBookingEmail } from '../lib/email';
+
+// Configurable UPI details for the business
+const MERCHANT_UPI_ID = 'adyra@ybl'; // Replace with your real UPI ID (GPay/PhonePe/Paytm business ID)
+const MERCHANT_NAME = 'MuseHaus Studio';
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
@@ -19,6 +23,21 @@ export default function Checkout() {
   const [existingEnrollment, setExistingEnrollment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
+  
+  // Payment state
+  const [paymentMethod, setPaymentMethod] = useState('upi'); // 'upi' or 'qr'
+  const [transactionId, setTransactionId] = useState(''); // Generated unique reference for tracking
+  const [utrNumber, setUtrNumber] = useState(''); // User entered 12-digit UPI UTR number
+  const [showVerificationForm, setShowVerificationForm] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile device for UPI deep linking
+  useEffect(() => {
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    if (/android|ipad|iphone|ipod/i.test(userAgent.toLowerCase())) {
+      setIsMobile(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -28,12 +47,15 @@ export default function Checkout() {
     }
     
     setLoading(true);
-    console.log("Checking existing enrollment for user:", user?.id, "workshopId:", workshopId, "isCombo:", isCombo);
+    
+    // Generate a unique transaction ID for this checkout session
+    const uniqueTxnId = `MSH${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+    setTransactionId(uniqueTxnId);
+
     Promise.all([
       getWorkshops(),
       checkExistingEnrollment(user.id, workshopId, isCombo)
     ]).then(([{ data: wsData }, { data: enrollData, error: enrollError }]) => {
-      console.log("Existing enrollment check returned data:", enrollData, "error:", enrollError);
       const found = wsData?.find((w) => w.id === workshopId);
       setWorkshop(found || null);
       setExistingEnrollment(enrollData || null);
@@ -48,34 +70,55 @@ export default function Checkout() {
   const displayPrice = isCombo ? '₹799' : `₹${workshop?.price || 499}`;
   const label = isCombo ? 'Combo (2 members)' : 'Single seat';
 
-  const handleBooking = async () => {
+  // Construct UPI deep-link URL scheme
+  const upiNote = `MuseHaus - ${workshop?.title ? workshop.title.substring(0, 20) : 'Workshop'}`;
+  const upiUrl = `upi://pay?pa=${MERCHANT_UPI_ID}&pn=${encodeURIComponent(MERCHANT_NAME)}&tr=${transactionId}&am=${price}&cu=INR&tn=${encodeURIComponent(upiNote)}`;
+  
+  // Dynamic QR Code using public qrserver API
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(upiUrl)}`;
+
+  const handleOpenUpiApp = () => {
+    // Open UPI link - on mobile this triggers OS to list payment apps
+    window.location.href = upiUrl;
+    setShowVerificationForm(true);
+    showToast('Redirecting to UPI apps...', 'success');
+  };
+
+  const handleBookingSubmit = async (e) => {
+    e.preventDefault();
     if (!workshop) return;
+
+    if (!utrNumber.trim()) {
+      showToast('Please enter the 12-digit UPI Ref / UTR No. to confirm.', 'error');
+      return;
+    }
+
+    if (utrNumber.trim().length < 8) {
+      showToast('Please enter a valid Transaction Ref / UTR number.', 'error');
+      return;
+    }
 
     setPaying(true);
 
     try {
-      // Generate a unique booking reference ID
-      const bookingRef = `MSH-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-
-      // Enroll user directly in Supabase/mock layer
+      // Enroll user directly in Supabase/mock layer with the entered UTR and generated transaction reference
       const { error } = await enrollInWorkshop(
         user.id,
         workshopId,
-        bookingRef,
-        null,
+        utrNumber,      // repurposed: stores user entered UTR as booking payment reference
+        transactionId,  // repurposed: stores unique tracking reference
         isCombo
       );
 
-      console.log('Enrollment result:', { error });
       if (error) {
         if (error.message.includes('already enrolled')) {
           showToast('You are already registered for this workshop option. ✦', 'info');
           navigate('/');
         } else {
-          showToast(error.message || 'Booking failed. Please try again.', 'error');
+          showToast(error.message || 'Booking verification failed. Please check UTR.', 'error');
         }
       } else {
-        showToast('Spot reserved successfully! You are enrolled. ✦', 'success');
+        showToast('Spot reserved successfully! We are verifying your payment. ✦', 'success');
 
         // Send confirmation email asynchronously (silent logging on failure)
         const emailParams = {
@@ -84,9 +127,9 @@ export default function Checkout() {
           workshopTitle: workshop.title,
           workshopDate: `${workshop.date} at ${workshop.time}`,
           amountPaid: price.toString(),
-          paymentId: bookingRef
+          paymentId: utrNumber
         };
-        console.log('[Checkout] Sending booking email with params:', emailParams);
+        
         sendBookingEmail(emailParams).catch((err) => {
           console.error('[Checkout] Failed to trigger sendBookingEmail:', err);
         });
@@ -94,8 +137,8 @@ export default function Checkout() {
         navigate('/');
       }
     } catch (error) {
-      console.error('Booking error:', error);
-      showToast(error.message || 'Booking failed. Please try again.', 'error');
+      console.error('Booking confirmation error:', error);
+      showToast(error.message || 'Verification failed. Please try again.', 'error');
     } finally {
       setPaying(false);
     }
@@ -145,7 +188,7 @@ export default function Checkout() {
 
             {existingEnrollment.razorpay_payment_id && (
               <div className="w-full bg-cream/60 rounded-lg p-4 text-xs text-muted font-mono select-all">
-                <span className="block font-sans font-semibold text-ink/75 mb-1">Booking Reference ID:</span>
+                <span className="block font-sans font-semibold text-ink/75 mb-1">Booking Reference ID / UTR:</span>
                 {existingEnrollment.razorpay_payment_id}
               </div>
             )}
@@ -177,7 +220,7 @@ export default function Checkout() {
         <div className="max-w-2xl mx-auto flex flex-col items-center gap-3">
           <span className="text-gold text-xs uppercase tracking-[0.25em] font-semibold">Secure Checkout</span>
           <h1 className="font-serif text-4xl md:text-5xl font-light tracking-wide">
-            Complete Your <span className="italic text-terra">Booking</span>
+            Select <span className="italic text-terra">Payment Method</span>
           </h1>
         </div>
       </header>
@@ -200,38 +243,134 @@ export default function Checkout() {
             <p className="text-xs text-muted mt-1">{workshop.date} &middot; {workshop.time}</p>
           </div>
 
-          <div className="border-t border-ink/10 pt-4 flex flex-col gap-3">
+          <div className="border-t border-ink/10 pt-4 flex flex-col gap-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted font-light">{label}</span>
               <span className="font-semibold">{displayPrice}</span>
             </div>
             <div className="flex justify-between text-sm font-bold border-t border-ink/10 pt-3">
-              <span>Total</span>
+              <span>Total Amount</span>
               <span className="text-terra">{displayPrice}</span>
             </div>
           </div>
 
-          {/* Booking info */}
-          {user && (
-            <div className="bg-cream/60 rounded-lg p-4 text-xs text-muted font-light flex flex-col gap-1">
-              <span className="font-semibold text-ink/70">Booking for:</span>
-              <span>{user.full_name}</span>
-              <span>{user.email}</span>
+          {/* Payment Method Selector */}
+          <div className="border-t border-ink/10 pt-6">
+            <label className="text-[10px] uppercase tracking-widest font-bold text-muted block mb-3">Pay via UPI</label>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => { setPaymentMethod('upi'); if(!isMobile) setShowVerificationForm(true); }}
+                className={`py-3.5 px-4 rounded-sm border flex items-center justify-center gap-2 text-xs uppercase tracking-wider font-bold transition-all ${
+                  paymentMethod === 'upi'
+                    ? 'border-terra bg-terra/5 text-terra shadow-sm'
+                    : 'border-ink/15 hover:border-ink/30 text-muted'
+                }`}
+              >
+                <Smartphone size={15} />
+                UPI App Link
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => { setPaymentMethod('qr'); setShowVerificationForm(true); }}
+                className={`py-3.5 px-4 rounded-sm border flex items-center justify-center gap-2 text-xs uppercase tracking-wider font-bold transition-all ${
+                  paymentMethod === 'qr'
+                    ? 'border-terra bg-terra/5 text-terra shadow-sm'
+                    : 'border-ink/15 hover:border-ink/30 text-muted'
+                }`}
+              >
+                <QrCode size={15} />
+                Scan QR Code
+              </button>
             </div>
+          </div>
+
+          {/* Payment Options View */}
+          <div className="bg-cream/45 rounded-lg p-6 border border-ink/5 flex flex-col items-center">
+            {paymentMethod === 'upi' ? (
+              <div className="w-full flex flex-col items-center gap-4 text-center">
+                {isMobile ? (
+                  <>
+                    <p className="text-xs text-muted font-light leading-relaxed">
+                      Click the button below to initiate payment directly using your phone's installed UPI apps (GPay, PhonePe, Paytm, BHIM, etc.).
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleOpenUpiApp}
+                      className="w-full bg-terra hover:bg-terra/90 text-cream text-xs uppercase tracking-widest font-bold py-4 rounded-sm transition-all duration-300 shadow-md"
+                    >
+                      Open UPI Apps (₹{price})
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-start gap-2 bg-terra/5 border border-terra/20 rounded-md p-3 text-left">
+                      <Info size={16} className="text-terra shrink-0 mt-0.5" />
+                      <p className="text-[11px] text-ink font-light leading-relaxed">
+                        <strong>Desktop detected:</strong> Direct UPI App launching is supported on mobile devices. Please switch to the <strong>Scan QR Code</strong> tab to pay with your mobile.
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="w-full flex flex-col items-center gap-4 text-center">
+                <p className="text-xs text-muted font-light leading-relaxed">
+                  Scan this dynamic QR code using Google Pay, PhonePe, Paytm, or any banking UPI app on your phone.
+                </p>
+                
+                {/* Dynamic QR Code */}
+                <div className="bg-white p-3 rounded-lg border border-ink/10 shadow-sm animate-fade-in">
+                  <img 
+                    src={qrCodeUrl} 
+                    alt="UPI Payment QR Code" 
+                    className="w-48 h-48 block object-contain"
+                  />
+                </div>
+
+                <div className="text-[10px] text-muted font-light flex flex-col gap-0.5">
+                  <span>Payee: <span className="font-semibold text-ink">{MERCHANT_NAME}</span></span>
+                  <span>UPI ID: <span className="font-semibold text-ink">{MERCHANT_UPI_ID}</span></span>
+                  <span>Amount: <span className="font-semibold text-ink">₹{price}</span></span>
+                  <span>Txn Ref: <span className="font-mono text-ink/80 text-[9px]">{transactionId}</span></span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Verification UTR Form */}
+          {showVerificationForm && (
+            <form onSubmit={handleBookingSubmit} className="border-t border-ink/10 pt-6 flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] uppercase tracking-widest font-bold text-muted flex justify-between">
+                  <span>UPI Transaction Ref / UTR No.</span>
+                  <span className="text-[9px] lowercase font-normal italic">12-digit number from payment receipt</span>
+                </label>
+                <input
+                  type="text"
+                  maxLength={16}
+                  placeholder="e.g. 618392019485"
+                  value={utrNumber}
+                  onChange={(e) => setUtrNumber(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
+                  className="bg-warm/25 border border-ink/10 focus:border-terra rounded-sm px-4 py-3 text-sm focus:outline-none transition-colors w-full tracking-wider font-mono text-center"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={paying}
+                className="w-full bg-ink hover:bg-ink/90 disabled:opacity-60 text-cream text-xs uppercase tracking-widest font-bold py-4 rounded-sm transition-all duration-300 shadow-md flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 size={15} />
+                {paying ? 'Verifying...' : 'Verify & Complete Booking'}
+              </button>
+            </form>
           )}
 
-          {/* Confirm Booking button */}
-          <button
-            onClick={handleBooking}
-            disabled={paying}
-            className="w-full bg-terra hover:bg-terra/90 disabled:opacity-60 text-cream text-xs uppercase tracking-widest font-bold py-4 rounded-sm transition-all duration-300 shadow-md flex items-center justify-center gap-2"
-          >
-            <CheckCircle2 size={15} />
-            {paying ? 'Processing...' : `Confirm Booking`}
-          </button>
-
           {/* Trust badge */}
-          <div className="flex items-center justify-center gap-2 text-[10px] text-muted">
+          <div className="flex items-center justify-center gap-2 text-[10px] text-muted border-t border-ink/5 pt-4">
             <ShieldCheck size={13} className="text-terra" />
             <span>Registration is verified and secured by MuseHaus</span>
           </div>
