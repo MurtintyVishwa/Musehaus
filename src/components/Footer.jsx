@@ -48,16 +48,16 @@ const Footer = () => {
           </h4>
           <ul className="flex flex-col gap-2.5 text-sm text-muted">
             <li>
-              <a href="#story" className="hover:text-terra transition-colors duration-200 font-light">Our Story</a>
+              <Link to="/story" className="hover:text-terra transition-colors duration-200 font-light">Our Story</Link>
             </li>
             <li>
-              <a href="#instructors" className="hover:text-terra transition-colors duration-200 font-light">Instructors</a>
+              <Link to="/story" className="hover:text-terra transition-colors duration-200 font-light">Instructors</Link>
             </li>
             <li>
-              <a href="#space" className="hover:text-terra transition-colors duration-200 font-light">The Space</a>
+              <Link to="/story" className="hover:text-terra transition-colors duration-200 font-light">The Space</Link>
             </li>
             <li>
-              <a href="#exhibitions" className="hover:text-terra transition-colors duration-200 font-light">Exhibitions</a>
+              <Link to="/story" className="hover:text-terra transition-colors duration-200 font-light">Exhibitions</Link>
             </li>
           </ul>
         </div>
@@ -78,7 +78,7 @@ const Footer = () => {
               <Link to="/contact" className="hover:text-terra transition-colors duration-200 font-light">Contact</Link>
             </li>
             <li>
-              <a href="#giftcards" className="hover:text-terra transition-colors duration-200 font-light">Gift Cards</a>
+              <Link to="/workshops" className="hover:text-terra transition-colors duration-200 font-light">Gift Cards</Link>
             </li>
           </ul>
         </div>
