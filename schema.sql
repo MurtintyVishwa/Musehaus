@@ -30,19 +30,19 @@ TO public
 USING (true);
 
 
--- 2. Create ENROLLMENTS Table
 CREATE TABLE IF NOT EXISTS public.enrollments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     workshop_id INTEGER NOT NULL REFERENCES public.workshops(id) ON DELETE CASCADE,
+    is_combo BOOLEAN NOT NULL DEFAULT false,
     enrolled_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     payment_status VARCHAR(50) NOT NULL DEFAULT 'paid',
     razorpay_payment_id TEXT,  -- repurposed: stores booking reference ID (e.g. MSH-XXXXXXXX)
     razorpay_order_id TEXT,    -- reserved for future payment gateway integration
     payment_verified BOOLEAN DEFAULT false,
     
-    -- Ensure user cannot enroll in the same workshop multiple times
-    CONSTRAINT unique_user_workshop UNIQUE (user_id, workshop_id)
+    -- Ensure user cannot enroll in the same workshop option multiple times
+    CONSTRAINT unique_user_workshop_combo UNIQUE (user_id, workshop_id, is_combo)
 );
 
 -- Enable Row Level Security (RLS) on Enrollments
