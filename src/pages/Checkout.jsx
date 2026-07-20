@@ -7,8 +7,8 @@ import { ArrowLeft, ShieldCheck, CheckCircle2, QrCode, Smartphone, Info } from '
 import { sendBookingEmail } from '../lib/email';
 
 // Configurable UPI details for the business
-const MERCHANT_UPI_ID = '7093666568@ibl'; // Replace with your real UPI ID (GPay/PhonePe/Paytm business ID)
-const MERCHANT_NAME = 'Vishwanath Murtinty';
+const MERCHANT_UPI_ID = '8309978539-t7d7@axl'; // Replace with your real UPI ID (GPay/PhonePe/Paytm business ID)
+const MERCHANT_NAME = 'Supriya';
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();

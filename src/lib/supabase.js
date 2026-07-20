@@ -414,12 +414,35 @@ export async function getAdminEnrollments() {
     }
 
     // 2. Query ALL registered users from profiles, with their enrollments
-    const { data: profiles, error } = await supabase
+    const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select('id, full_name, email, phone, created_at')
       .order('created_at', { ascending: false });
 
-    if (error) return { data: null, error };
+    if (profilesError) {
+      console.warn("Profiles table not found, falling back to enrollments query:", profilesError);
+      
+      // Fallback query directly on enrollments
+      const { data: enrollments, error: enrollError } = await supabase
+        .from('enrollments')
+        .select('*, workshops(title, date)')
+        .order('enrolled_at', { ascending: false });
+
+      if (enrollError) return { data: null, error: enrollError };
+
+      const formatted = (enrollments || []).map(e => ({
+        id: e.id,
+        user_id: e.user_id,
+        customer_name: e.customer_name || 'Art Lover',
+        customer_email: e.customer_email || '—',
+        customer_phone: e.customer_phone || '—',
+        enrolled_at: e.enrolled_at,
+        registered_packages: `${e.workshops?.title || 'Workshop'}${e.is_combo ? ' (Combo)' : ' (Solo)'}`,
+        workshops: { title: `${e.workshops?.title || 'Workshop'}${e.is_combo ? ' (Combo)' : ' (Solo)'}`, date: '' }
+      }));
+
+      return { data: formatted, error: null };
+    }
 
     // 3. For each user, fetch their active enrollments
     const enriched = await Promise.all(
