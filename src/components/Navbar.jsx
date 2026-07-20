@@ -41,7 +41,7 @@ const Navbar = () => {
 
   return (
     <nav 
-      className="sticky top-0 z-50 h-16 backdrop-blur-sm border-b border-ink/10 flex items-center justify-between px-6 md:px-12 transition-all"
+      className="sticky top-0 z-50 h-16 backdrop-blur-sm border-b border-ink/10 flex items-center justify-between px-6 md:px-12 transition-all relative"
       style={{ backgroundColor: 'rgba(245, 240, 232, 0.96)' }}
     >
       {/* Left: Logo */}
@@ -54,8 +54,8 @@ const Navbar = () => {
         <span className="text-terra" style={{ color: '#c0623a' }}>Haus</span>
       </Link>
 
-      {/* Center: Navigation Links (Desktop) */}
-      <div className="hidden md:flex items-center gap-8">
+      {/* Center: Navigation Links (Desktop) — absolutely centered */}
+      <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
         {displayedLinks.map((link) => (
           <Link
             key={link.name}
@@ -72,6 +72,7 @@ const Navbar = () => {
           </Link>
         ))}
       </div>
+
 
       {/* Right: Auth Actions (Desktop) */}
       <div className="hidden md:flex items-center gap-4">

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { Calendar, Clock, BookOpen } from 'lucide-react';
 import { getWorkshops } from '../lib/supabase';
 
@@ -88,31 +87,6 @@ export default function Workshops() {
                       {w.seats_remaining} / {w.seats_total} Seats Left
                     </span>
                   </div>
-
-                  {/* Book Buttons */}
-                  {w.status !== 'sold-out' && (
-                    <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                      <Link
-                        to={`/checkout?workshop=${w.id}`}
-                        className="flex-1 text-center bg-terra hover:bg-terra/90 text-cream text-[10px] uppercase tracking-widest font-bold py-2.5 rounded-sm transition-all duration-300 shadow-sm"
-                      >
-                        Book — ₹{w.price}
-                      </Link>
-                      {w.combo_price && (
-                        <Link
-                          to={`/checkout?workshop=${w.id}&combo=true`}
-                          className="flex-1 text-center border border-terra/40 hover:bg-terra/10 text-terra text-[10px] uppercase tracking-widest font-bold py-2.5 rounded-sm transition-all duration-300"
-                        >
-                          Combo — ₹{w.combo_price}
-                        </Link>
-                      )}
-                    </div>
-                  )}
-                  {w.status === 'sold-out' && (
-                    <div className="mt-2 text-center text-[10px] uppercase tracking-widest font-bold text-red-400 py-2.5 border border-red-200 rounded-sm bg-red-50">
-                      Sold Out
-                    </div>
-                  )}
                 </div>
               </div>
             ))}
