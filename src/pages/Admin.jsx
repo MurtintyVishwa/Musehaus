@@ -96,7 +96,7 @@ export default function Admin() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] uppercase tracking-widest font-bold text-muted">Admin Email</label>
                 <input
-                  type="email"
+                  type="text"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   placeholder="admin@musehaus.com"
@@ -109,11 +109,12 @@ export default function Admin() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] uppercase tracking-widest font-bold text-muted">Password</label>
                 <input
-                  type="password"
+                  type="text"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   placeholder="••••••••"
-                  autoComplete="new-password"
+                  autoComplete="off"
+                  style={{ WebkitTextSecurity: 'disc', mozTextSecurity: 'disc' }}
                   className="bg-warm/25 border border-ink/10 focus:border-terra rounded-sm px-4 py-3 text-sm focus:outline-none transition-colors w-full"
                   required
                 />

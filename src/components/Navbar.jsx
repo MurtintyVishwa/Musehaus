@@ -28,6 +28,10 @@ const Navbar = () => {
     { name: 'Contact', path: '/contact' }
   ];
 
+  const displayedLinks = isAdminRoute 
+    ? navLinks.filter(link => link.name !== 'Home')
+    : navLinks;
+
   return (
     <nav 
       className="sticky top-0 z-50 h-16 backdrop-blur-sm border-b border-ink/10 flex items-center justify-between px-6 md:px-12 transition-all"
@@ -45,7 +49,7 @@ const Navbar = () => {
 
       {/* Center: Navigation Links (Desktop) */}
       <div className="hidden md:flex items-center gap-8">
-        {navLinks.map((link) => (
+        {displayedLinks.map((link) => (
           <Link
             key={link.name}
             to={link.name === 'Home' && isAdminRoute ? '/admin' : link.path}
@@ -123,7 +127,7 @@ const Navbar = () => {
             : 'opacity-0 -translate-y-4 invisible pointer-events-none'
         }`}
       >
-        {navLinks.map((link) => (
+        {displayedLinks.map((link) => (
           <Link
             key={link.name}
             to={link.name === 'Home' && isAdminRoute ? '/admin' : link.path}
