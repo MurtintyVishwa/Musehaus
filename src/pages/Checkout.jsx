@@ -7,8 +7,8 @@ import { ArrowLeft, ShieldCheck, CheckCircle2, QrCode, Smartphone, Info } from '
 import { sendBookingEmail } from '../lib/email';
 
 // Configurable UPI details for the business
-const MERCHANT_UPI_ID = 'adyra@ybl'; // Replace with your real UPI ID (GPay/PhonePe/Paytm business ID)
-const MERCHANT_NAME = 'MuseHaus Studio';
+const MERCHANT_UPI_ID = '7093666568@ibl'; // Replace with your real UPI ID (GPay/PhonePe/Paytm business ID)
+const MERCHANT_NAME = 'Vishwanath Murtinty';
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
@@ -23,7 +23,7 @@ export default function Checkout() {
   const [existingEnrollment, setExistingEnrollment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
-  
+
   // Payment state
   const [paymentMethod, setPaymentMethod] = useState('upi'); // 'upi' or 'qr'
   const [transactionId, setTransactionId] = useState(''); // Generated unique reference for tracking
@@ -45,9 +45,9 @@ export default function Checkout() {
       navigate(`/login?redirect=/checkout?workshop=${workshopId}${isCombo ? '&combo=true' : ''}`);
       return;
     }
-    
+
     setLoading(true);
-    
+
     // Generate a unique transaction ID for this checkout session
     const uniqueTxnId = `MSH${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
     setTransactionId(uniqueTxnId);
@@ -73,7 +73,7 @@ export default function Checkout() {
   // Construct UPI deep-link URL scheme
   const upiNote = `MuseHaus - ${workshop?.title ? workshop.title.substring(0, 20) : 'Workshop'}`;
   const upiUrl = `upi://pay?pa=${MERCHANT_UPI_ID}&pn=${encodeURIComponent(MERCHANT_NAME)}&tr=${transactionId}&am=${price}&cu=INR&tn=${encodeURIComponent(upiNote)}`;
-  
+
   // Dynamic QR Code using public qrserver API
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(upiUrl)}`;
 
@@ -129,7 +129,7 @@ export default function Checkout() {
           amountPaid: price.toString(),
           paymentId: utrNumber
         };
-        
+
         sendBookingEmail(emailParams).catch((err) => {
           console.error('[Checkout] Failed to trigger sendBookingEmail:', err);
         });
@@ -176,7 +176,7 @@ export default function Checkout() {
         <main className="max-w-xl mx-auto px-6 md:px-8 mt-12">
           <div className="bg-white border border-ink/10 rounded-xl shadow-lg p-8 flex flex-col items-center text-center gap-6">
             <div className="text-6xl animate-bounce">🎨</div>
-            
+
             <div className="flex flex-col gap-2">
               <h2 className="font-serif text-2xl md:text-3xl font-medium text-ink">
                 You're already registered!
@@ -260,25 +260,23 @@ export default function Checkout() {
             <div className="grid grid-cols-2 gap-4">
               <button
                 type="button"
-                onClick={() => { setPaymentMethod('upi'); if(!isMobile) setShowVerificationForm(true); }}
-                className={`py-3.5 px-4 rounded-sm border flex items-center justify-center gap-2 text-xs uppercase tracking-wider font-bold transition-all ${
-                  paymentMethod === 'upi'
-                    ? 'border-terra bg-terra/5 text-terra shadow-sm'
-                    : 'border-ink/15 hover:border-ink/30 text-muted'
-                }`}
+                onClick={() => { setPaymentMethod('upi'); if (!isMobile) setShowVerificationForm(true); }}
+                className={`py-3.5 px-4 rounded-sm border flex items-center justify-center gap-2 text-xs uppercase tracking-wider font-bold transition-all ${paymentMethod === 'upi'
+                  ? 'border-terra bg-terra/5 text-terra shadow-sm'
+                  : 'border-ink/15 hover:border-ink/30 text-muted'
+                  }`}
               >
                 <Smartphone size={15} />
                 UPI App Link
               </button>
-              
+
               <button
                 type="button"
                 onClick={() => { setPaymentMethod('qr'); setShowVerificationForm(true); }}
-                className={`py-3.5 px-4 rounded-sm border flex items-center justify-center gap-2 text-xs uppercase tracking-wider font-bold transition-all ${
-                  paymentMethod === 'qr'
-                    ? 'border-terra bg-terra/5 text-terra shadow-sm'
-                    : 'border-ink/15 hover:border-ink/30 text-muted'
-                }`}
+                className={`py-3.5 px-4 rounded-sm border flex items-center justify-center gap-2 text-xs uppercase tracking-wider font-bold transition-all ${paymentMethod === 'qr'
+                  ? 'border-terra bg-terra/5 text-terra shadow-sm'
+                  : 'border-ink/15 hover:border-ink/30 text-muted'
+                  }`}
               >
                 <QrCode size={15} />
                 Scan QR Code
@@ -319,12 +317,12 @@ export default function Checkout() {
                 <p className="text-xs text-muted font-light leading-relaxed">
                   Scan this dynamic QR code using Google Pay, PhonePe, Paytm, or any banking UPI app on your phone.
                 </p>
-                
+
                 {/* Dynamic QR Code */}
                 <div className="bg-white p-3 rounded-lg border border-ink/10 shadow-sm animate-fade-in">
-                  <img 
-                    src={qrCodeUrl} 
-                    alt="UPI Payment QR Code" 
+                  <img
+                    src={qrCodeUrl}
+                    alt="UPI Payment QR Code"
                     className="w-48 h-48 block object-contain"
                   />
                 </div>
