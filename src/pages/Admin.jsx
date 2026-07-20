@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { getWorkshops, getAdminEnrollments, MOCK_MODE } from '../lib/supabase';
 import { useToast } from '../context/ToastContext';
 import { ShieldAlert, BookOpen, Users, Calendar, Mail, Phone, Clock, LogOut, Lock } from 'lucide-react';
@@ -12,6 +13,13 @@ export default function Admin() {
   });
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const location = useLocation();
+
+  // Sync state with sessionStorage on route navigation
+  useEffect(() => {
+    const isLoggedIn = sessionStorage.getItem('musehaus_admin_logged_in') === 'true';
+    setIsAdminLoggedIn(isLoggedIn);
+  }, [location]);
   
   // Dashboard data
   const [workshops, setWorkshops] = useState([]);
@@ -84,7 +92,7 @@ export default function Admin() {
 
           {/* Login Card */}
           <div className="bg-white border border-ink/10 rounded-xl shadow-lg p-8">
-            <form onSubmit={handleLoginSubmit} className="flex flex-col gap-5">
+            <form onSubmit={handleLoginSubmit} autoComplete="off" className="flex flex-col gap-5">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[10px] uppercase tracking-widest font-bold text-muted">Admin Email</label>
                 <input
@@ -92,6 +100,7 @@ export default function Admin() {
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   placeholder="admin@musehaus.com"
+                  autoComplete="off"
                   className="bg-warm/25 border border-ink/10 focus:border-terra rounded-sm px-4 py-3 text-sm focus:outline-none transition-colors w-full"
                   required
                 />
@@ -104,6 +113,7 @@ export default function Admin() {
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   className="bg-warm/25 border border-ink/10 focus:border-terra rounded-sm px-4 py-3 text-sm focus:outline-none transition-colors w-full"
                   required
                 />
@@ -256,17 +266,19 @@ export default function Admin() {
                     enrollments.map((e, index) => (
                       <tr key={e.id} className="hover:bg-cream/15 transition-colors">
                         <td className="py-4 px-6 font-semibold text-xs text-muted w-16">{index + 1}</td>
-                        <td className="py-4 px-6 font-medium text-ink">{e.customer_name || 'Art Lover'}</td>
+                        <td className="py-4 px-6 font-medium text-ink">
+                          {e.customer_name || `Artisan (${e.user_id ? e.user_id.slice(0, 8) : 'Legacy'})`}
+                        </td>
                         <td className="py-4 px-6">
                           <span className="flex items-center gap-1.5">
                             <Mail size={12} className="text-muted" />
-                            {e.customer_email || '--'}
+                            {e.customer_email || 'check-auth@musehaus.com'}
                           </span>
                         </td>
                         <td className="py-4 px-6 font-mono text-xs">
                           <span className="flex items-center gap-1.5">
                             <Phone size={12} className="text-muted" />
-                            {e.customer_phone || '--'}
+                            {e.customer_phone || 'No Contact'}
                           </span>
                         </td>
                         <td className="py-4 px-6 text-center">

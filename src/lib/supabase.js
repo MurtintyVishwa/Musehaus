@@ -356,12 +356,32 @@ export async function getAdminEnrollments() {
 
   if (MOCK_MODE) {
     let enrollments = getMockData('enrollments', []);
+    const users = getMockData('users', []);
+    const workshops = getMockData('workshops', DEFAULT_WORKSHOPS);
+
     // Auto-delete entries older than 60 days
     const activeEnrollments = enrollments.filter(e => new Date(e.enrolled_at) >= sixtyDaysAgo);
     if (activeEnrollments.length !== enrollments.length) {
       setMockData('enrollments', activeEnrollments);
     }
-    return { data: activeEnrollments, error: null };
+    
+    // Populate registration fields using mock users & workshops database
+    const populated = activeEnrollments.map(e => {
+      const u = users.find(usr => usr.id === e.user_id);
+      const w = workshops.find(wrk => wrk.id === e.workshop_id);
+      return {
+        ...e,
+        customer_name: e.customer_name || u?.full_name || 'Art Lover',
+        customer_email: e.customer_email || u?.email || '',
+        customer_phone: e.customer_phone || u?.phone || '',
+        workshops: {
+          title: w?.title || 'Workshop',
+          date: w?.date || ''
+        }
+      };
+    });
+
+    return { data: populated, error: null };
   } else {
     try {
       // 1. Delete enrollments older than 60 days automatically from the DB

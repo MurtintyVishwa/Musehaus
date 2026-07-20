@@ -11,6 +11,13 @@ const Navbar = () => {
   const handleToggle = () => setIsOpen(!isOpen);
   const closeMenu = () => setIsOpen(false);
 
+  const handleAdminHomeClick = () => {
+    if (isAdminRoute) {
+      sessionStorage.removeItem('musehaus_admin_logged_in');
+    }
+    closeMenu();
+  };
+
   const isActive = (path) => location.pathname === path;
   const isAdminRoute = location.pathname === '/admin';
 
@@ -29,7 +36,7 @@ const Navbar = () => {
       {/* Left: Logo */}
       <Link 
         to={isAdminRoute ? "/admin" : "/"} 
-        onClick={closeMenu}
+        onClick={handleAdminHomeClick}
         className="font-serif text-2xl tracking-wide font-semibold select-none flex items-center gap-1 flex-shrink-0 whitespace-nowrap"
       >
         <span className="text-ink" style={{ color: '#1a1a18' }}>Muse</span>
@@ -42,6 +49,7 @@ const Navbar = () => {
           <Link
             key={link.name}
             to={link.name === 'Home' && isAdminRoute ? '/admin' : link.path}
+            onClick={link.name === 'Home' ? handleAdminHomeClick : closeMenu}
             className={`text-xs uppercase tracking-[0.2em] font-medium transition-colors duration-300 relative py-1 hover:text-terra ${
               isActive(link.path) ? 'text-terra' : 'text-muted'
             }`}
@@ -119,7 +127,7 @@ const Navbar = () => {
           <Link
             key={link.name}
             to={link.name === 'Home' && isAdminRoute ? '/admin' : link.path}
-            onClick={closeMenu}
+            onClick={link.name === 'Home' ? handleAdminHomeClick : closeMenu}
             className={`text-xs uppercase tracking-[0.25em] font-medium w-full text-center py-2 transition-colors ${
               isActive(link.path) ? 'text-terra font-semibold' : 'text-muted'
             }`}
