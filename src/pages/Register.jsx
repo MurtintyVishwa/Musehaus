@@ -131,30 +131,24 @@ export default function Register() {
     const { success } = result;
 
     if (success) {
-      // FIX 6: If Supabase requires email confirmation, guide the user explicitly
-      if (result?.requiresEmailConfirmation) {
-        showToast("Account created! Please check your email to confirm your account before logging in.", "success");
-        setTimeout(() => navigate('/login'), 2000);
-      } else {
-        showToast("Account created successfully! Welcome to MuseHaus. ✦", "success");
-        
-        // If they were redirected from a workshop card, automatically enroll them
-        if (targetWorkshopId) {
-          try {
-            const session = JSON.parse(localStorage.getItem('musehaus_session'));
-            if (session?.id) {
-              await enrollInWorkshop(session.id, parseInt(targetWorkshopId));
-              showToast("Successfully enrolled in your selected workshop! ✦", "success");
-            }
-          } catch (err) {
-            console.error("Auto enrollment failed", err);
+      showToast("Account created successfully! Welcome to MuseHaus. ✦", "success");
+      
+      // If they were redirected from a workshop card, automatically enroll them
+      if (targetWorkshopId) {
+        try {
+          const session = JSON.parse(localStorage.getItem('musehaus_session'));
+          if (session?.id) {
+            await enrollInWorkshop(session.id, parseInt(targetWorkshopId));
+            showToast("Successfully enrolled in your selected workshop! ✦", "success");
           }
+        } catch (err) {
+          console.error("Auto enrollment failed", err);
         }
-
-        setTimeout(() => {
-          navigate('/');
-        }, 1500);
       }
+
+      setTimeout(() => {
+        navigate('/');
+      }, 1500);
     } else {
       setIsSubmitting(false);
     }

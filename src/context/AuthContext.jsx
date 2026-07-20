@@ -95,10 +95,14 @@ export const AuthProvider = ({ children }) => {
       }
       // In live mode with email confirmation, data.session is null until confirmed
       // In mock mode or if email confirmation is off, session is returned immediately
-      if (data?.user && !supabase) {
-        setUser(data.user);
+      if (data?.user) {
+        if (data.session?.user) {
+          setUser(normalizeUser(data.session.user));
+        } else if (!supabase) {
+          setUser(data.user);
+        }
       }
-      return { success: true, requiresEmailConfirmation: supabase && !data?.session };
+      return { success: true };
     } catch (err) {
       showToast("An unexpected error occurred during sign up.", "error");
       return { success: false, error: err };
