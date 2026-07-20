@@ -11,6 +11,7 @@ import Story from './pages/Story';
 import Checkout from './pages/Checkout';
 import ResetPassword from './pages/ResetPassword';
 import ScrollToTop from './components/ScrollToTop';
+import Admin from './pages/Admin';
 
 // Context Providers
 import { ToastProvider } from './context/ToastContext';
@@ -37,6 +38,7 @@ function App() {
                 <Route path="/story" element={<Story />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/admin" element={<Admin />} />
               </Routes>
             </main>
 

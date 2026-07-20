@@ -12,7 +12,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const isValidUrl = supabaseUrl && supabaseUrl.startsWith('http') && !supabaseUrl.includes('your_supabase');
 const isValidKey = supabaseAnonKey && supabaseAnonKey.length > 20 && !supabaseAnonKey.includes('your_supabase');
 
-const MOCK_MODE = MOCK_MODE_SETTING || !isValidUrl || !isValidKey;
+export const MOCK_MODE = MOCK_MODE_SETTING || !isValidUrl || !isValidKey;
 
 if (MOCK_MODE && !MOCK_MODE_SETTING) {
   console.warn(
@@ -254,6 +254,9 @@ export async function enrollInWorkshop(userId, workshopId, paymentId = null, ord
     }
 
     // Create enrollment
+    const users = getMockData('users', []);
+    const currentUser = users.find(u => u.id === userId);
+
     const newEnrollment = {
       id: `enr_${Math.random().toString(36).substr(2, 9)}`,
       user_id: userId,
@@ -263,7 +266,10 @@ export async function enrollInWorkshop(userId, workshopId, paymentId = null, ord
       payment_status: paymentId ? "paid" : "pending",
       razorpay_payment_id: paymentId || null,
       razorpay_order_id: orderId || null,
-      payment_verified: !!paymentId
+      payment_verified: !!paymentId,
+      customer_name: currentUser?.full_name || 'Art Lover',
+      customer_email: currentUser?.email || '',
+      customer_phone: currentUser?.phone || ''
     };
 
     enrollments.push(newEnrollment);
@@ -274,6 +280,19 @@ export async function enrollInWorkshop(userId, workshopId, paymentId = null, ord
 
     return { data: newEnrollment, error: null };
   } else {
+    // Retrieve metadata to write to table
+    let name = '';
+    let email = '';
+    let phone = '';
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      name = user?.user_metadata?.full_name || '';
+      email = user?.email || '';
+      phone = user?.user_metadata?.phone || '';
+    } catch (e) {
+      console.error("Failed to fetch user session info for enrollment logging", e);
+    }
+
     const { data, error } = await supabase
       .from('enrollments')
       .insert([
@@ -284,7 +303,10 @@ export async function enrollInWorkshop(userId, workshopId, paymentId = null, ord
           payment_status: paymentId ? 'paid' : 'pending',
           razorpay_payment_id: paymentId || null,
           razorpay_order_id: orderId || null,
-          payment_verified: !!paymentId
+          payment_verified: !!paymentId,
+          customer_name: name,
+          customer_email: email,
+          customer_phone: phone
         }
       ])
       .select();
@@ -323,6 +345,40 @@ export async function checkExistingEnrollment(userId, workshopId, isCombo = fals
       .eq('workshop_id', workshopId)
       .eq('is_combo', isCombo)
       .maybeSingle();
+    return { data, error };
+  }
+}
+
+export async function getAdminEnrollments() {
+  const sixtyDaysAgo = new Date();
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+  const cutoffStr = sixtyDaysAgo.toISOString();
+
+  if (MOCK_MODE) {
+    let enrollments = getMockData('enrollments', []);
+    // Auto-delete entries older than 60 days
+    const activeEnrollments = enrollments.filter(e => new Date(e.enrolled_at) >= sixtyDaysAgo);
+    if (activeEnrollments.length !== enrollments.length) {
+      setMockData('enrollments', activeEnrollments);
+    }
+    return { data: activeEnrollments, error: null };
+  } else {
+    try {
+      // 1. Delete enrollments older than 60 days automatically from the DB
+      await supabase
+        .from('enrollments')
+        .delete()
+        .lt('enrolled_at', cutoffStr);
+    } catch (e) {
+      console.error("Auto delete cleanup error:", e);
+    }
+
+    // 2. Query remaining enrollments with workshop title details
+    const { data, error } = await supabase
+      .from('enrollments')
+      .select('*, workshops(title, date)')
+      .order('enrolled_at', { ascending: false });
+
     return { data, error };
   }
 }

@@ -40,6 +40,9 @@ CREATE TABLE IF NOT EXISTS public.enrollments (
     razorpay_payment_id TEXT,  -- repurposed: stores booking reference ID (e.g. MSH-XXXXXXXX)
     razorpay_order_id TEXT,    -- reserved for future payment gateway integration
     payment_verified BOOLEAN DEFAULT false,
+    customer_name TEXT,
+    customer_email TEXT,
+    customer_phone TEXT,
     
     -- Ensure user cannot enroll in the same workshop option multiple times
     CONSTRAINT unique_user_workshop_combo UNIQUE (user_id, workshop_id, is_combo)
@@ -48,17 +51,23 @@ CREATE TABLE IF NOT EXISTS public.enrollments (
 -- Enable Row Level Security (RLS) on Enrollments
 ALTER TABLE public.enrollments ENABLE ROW LEVEL SECURITY;
 
--- Allow users to read their own enrollments only
-CREATE POLICY "Allow users to select their own enrollments" 
+-- Allow users to read their own enrollments OR allow admin to read all
+CREATE POLICY "Allow users and admin to select enrollments" 
 ON public.enrollments FOR SELECT 
 TO authenticated 
-USING (auth.uid() = user_id);
+USING (auth.uid() = user_id OR auth.jwt() ->> 'email' = 'musehaus14@gmail.com');
 
 -- Allow authenticated users to insert their own enrollments
 CREATE POLICY "Allow users to enroll in workshops" 
 ON public.enrollments FOR INSERT 
 TO authenticated 
 WITH CHECK (auth.uid() = user_id);
+
+-- Allow admin to delete/cleanup enrollments older than 60 days
+CREATE POLICY "Allow admin to delete enrollments"
+ON public.enrollments FOR DELETE
+TO authenticated
+USING (auth.jwt() ->> 'email' = 'musehaus14@gmail.com');
 
 
 -- 3. Seed WORKSHOPS Data
