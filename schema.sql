@@ -70,7 +70,70 @@ TO authenticated
 USING (auth.jwt() ->> 'email' = 'musehaus14@gmail.com');
 
 
--- 3. Seed WORKSHOPS Data
+-- 3. Create PROFILES Table to track registered users
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    full_name TEXT,
+    email TEXT,
+    phone TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Enable Row Level Security (RLS) on Profiles
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+-- Allow select to authenticated users (admin can see all, users can see themselves)
+CREATE POLICY "Allow authenticated users to read profiles" 
+ON public.profiles FOR SELECT 
+TO authenticated 
+USING (auth.uid() = id OR auth.jwt() ->> 'email' = 'musehaus14@gmail.com');
+
+-- Allow insert/update to users for their own profile
+CREATE POLICY "Allow users to insert their own profile" 
+ON public.profiles FOR INSERT 
+TO authenticated 
+WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Allow users to update their own profile"
+ON public.profiles FOR UPDATE
+TO authenticated
+USING (auth.uid() = id);
+
+-- Database trigger to automatically sync auth.users with public.profiles on signup/Google OAuth
+CREATE OR REPLACE FUNCTION public.handle_new_user() 
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, email, phone)
+  VALUES (
+    new.id,
+    COALESCE(new.raw_user_meta_data->>'full_name', ''),
+    new.email,
+    COALESCE(new.raw_user_meta_data->>'phone', '')
+  )
+  ON CONFLICT (id) DO UPDATE
+  SET full_name = EXCLUDED.full_name,
+      phone = EXCLUDED.phone;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Backfill trigger for existing auth users into public.profiles
+INSERT INTO public.profiles (id, full_name, email, phone, created_at)
+SELECT 
+  id, 
+  COALESCE(raw_user_meta_data->>'full_name', ''), 
+  email, 
+  COALESCE(raw_user_meta_data->>'phone', ''),
+  created_at
+FROM auth.users
+ON CONFLICT (id) DO NOTHING;
+
+
+-- 4. Seed WORKSHOPS Data
 INSERT INTO public.workshops 
   (title, instructor_name, instructor_avatar_initials, medium, level, date, time, duration_hours, price, seats_total, seats_remaining, status, gradient_style) 
 VALUES

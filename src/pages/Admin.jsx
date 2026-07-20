@@ -282,14 +282,8 @@ export default function Admin() {
                             {e.customer_phone || 'No Contact'}
                           </span>
                         </td>
-                        <td className="py-4 px-6 text-center">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${
-                            e.is_combo 
-                              ? 'bg-terra/10 text-terra border border-terra/20' 
-                              : 'bg-gold/10 text-gold border border-gold/20'
-                          }`}>
-                            {e.is_combo ? 'Combo (₹799)' : 'Solo (₹499)'}
-                          </span>
+                        <td className="py-4 px-6 text-center text-xs font-semibold text-terra">
+                          {e.registered_packages || '—'}
                         </td>
                         <td className="py-4 px-6 text-xs text-muted font-sans">{formatDate(e.enrolled_at)}</td>
                       </tr>

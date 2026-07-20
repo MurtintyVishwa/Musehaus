@@ -153,6 +153,22 @@ export async function signUp(email, password, fullName, phone, interests = []) {
     });
 
     if (error) return { data: null, error };
+
+    // Insert profile data into public.profiles for admin dashboard visibility
+    if (data.user) {
+      try {
+        await supabase.from('profiles').upsert({
+          id: data.user.id,
+          full_name: fullName,
+          email: email,
+          phone: phone,
+          created_at: data.user.created_at || new Date().toISOString()
+        });
+      } catch (profileErr) {
+        console.error("Profile sync failed:", profileErr);
+      }
+    }
+
     return { 
       data: { 
         user: normalizeUser(data.user), 
@@ -355,33 +371,37 @@ export async function getAdminEnrollments() {
   const cutoffStr = sixtyDaysAgo.toISOString();
 
   if (MOCK_MODE) {
-    let enrollments = getMockData('enrollments', []);
     const users = getMockData('users', []);
+    const enrollments = getMockData('enrollments', []);
     const workshops = getMockData('workshops', DEFAULT_WORKSHOPS);
 
-    // Auto-delete entries older than 60 days
+    // Auto-delete mock entries older than 60 days
     const activeEnrollments = enrollments.filter(e => new Date(e.enrolled_at) >= sixtyDaysAgo);
     if (activeEnrollments.length !== enrollments.length) {
       setMockData('enrollments', activeEnrollments);
     }
     
-    // Populate registration fields using mock users & workshops database
-    const populated = activeEnrollments.map(e => {
-      const u = users.find(usr => usr.id === e.user_id);
-      const w = workshops.find(wrk => wrk.id === e.workshop_id);
+    // Group enrollments by user and map to match user table structure
+    const enriched = users.map(u => {
+      const userEnrollments = activeEnrollments.filter(e => e.user_id === u.id);
+      const packages = userEnrollments.map(e => {
+        const w = workshops.find(wrk => wrk.id === e.workshop_id);
+        return `${w?.title || 'Workshop'}${e.is_combo ? ' (Combo)' : ' (Solo)'}`;
+      }).join(', ');
+
       return {
-        ...e,
-        customer_name: e.customer_name || u?.full_name || 'Art Lover',
-        customer_email: e.customer_email || u?.email || '',
-        customer_phone: e.customer_phone || u?.phone || '',
-        workshops: {
-          title: w?.title || 'Workshop',
-          date: w?.date || ''
-        }
+        id: u.id,
+        user_id: u.id,
+        customer_name: u.full_name || 'Art Lover',
+        customer_email: u.email || '',
+        customer_phone: u.phone || '',
+        enrolled_at: u.created_at || new Date().toISOString(),
+        registered_packages: packages || '—',
+        workshops: { title: packages || '—', date: '' }
       };
     });
 
-    return { data: populated, error: null };
+    return { data: enriched, error: null };
   } else {
     try {
       // 1. Delete enrollments older than 60 days automatically from the DB
@@ -393,12 +413,41 @@ export async function getAdminEnrollments() {
       console.error("Auto delete cleanup error:", e);
     }
 
-    // 2. Query remaining enrollments with workshop title details
-    const { data, error } = await supabase
-      .from('enrollments')
-      .select('*, workshops(title, date)')
-      .order('enrolled_at', { ascending: false });
+    // 2. Query ALL registered users from profiles, with their enrollments
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, phone, created_at')
+      .order('created_at', { ascending: false });
 
-    return { data, error };
+    if (error) return { data: null, error };
+
+    // 3. For each user, fetch their active enrollments
+    const enriched = await Promise.all(
+      (profiles || []).map(async (profile) => {
+        const { data: userEnrollments } = await supabase
+          .from('enrollments')
+          .select('id, enrolled_at, is_combo, workshops(title, date)')
+          .eq('user_id', profile.id)
+          .gte('enrolled_at', cutoffStr)
+          .order('enrolled_at', { ascending: false });
+
+        const packages = (userEnrollments || []).map(e =>
+          `${e.workshops?.title || 'Workshop'}${e.is_combo ? ' (Combo)' : ' (Solo)'}`
+        ).join(', ');
+
+        return {
+          id: profile.id,
+          user_id: profile.id,
+          customer_name: profile.full_name || '',
+          customer_email: profile.email || '',
+          customer_phone: profile.phone || '',
+          enrolled_at: profile.created_at,
+          registered_packages: packages || '—',
+          workshops: { title: packages || '—', date: '' }
+        };
+      })
+    );
+
+    return { data: enriched, error: null };
   }
 }
