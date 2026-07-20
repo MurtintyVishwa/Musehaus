@@ -10,7 +10,7 @@ import emailjs from '@emailjs/browser';
  * @param {string} params.workshopTitle - Title of the workshop
  * @param {string} params.workshopDate - Human-readable date of the workshop
  * @param {string} params.amountPaid - Total amount paid (e.g. "499" or "799")
- * @param {string} params.paymentId - Razorpay payment ID (acting as booking ID)
+ * @param {string} params.paymentId - Booking reference ID (e.g. MSH-XXXXXXXX)
  * @returns {Promise<boolean>} True if sent successfully or fallback was used, false on active error.
  */
 export async function sendBookingEmail({

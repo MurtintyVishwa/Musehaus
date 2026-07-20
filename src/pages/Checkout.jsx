@@ -3,25 +3,8 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { enrollInWorkshop, getWorkshops, checkExistingEnrollment } from '../lib/supabase';
-import { ArrowLeft, ShieldCheck, CreditCard } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { sendBookingEmail } from '../lib/email';
-
-const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID || 'YOUR_RAZORPAY_KEY_ID';
-
-function loadRazorpayScript() {
-  return new Promise((resolve) => {
-    if (document.getElementById('razorpay-script')) {
-      resolve(true);
-      return;
-    }
-    const script = document.createElement('script');
-    script.id = 'razorpay-script';
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
-}
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
@@ -65,146 +48,55 @@ export default function Checkout() {
   const displayPrice = isCombo ? '₹799' : `₹${workshop?.price || 499}`;
   const label = isCombo ? 'Combo (2 members)' : 'Single seat';
 
-  const handlePayment = async () => {
+  const handleBooking = async () => {
     if (!workshop) return;
-
-    const loaded = await loadRazorpayScript();
-    if (!loaded) {
-      showToast('Failed to load payment gateway. Check your internet connection.', 'error');
-      return;
-    }
 
     setPaying(true);
 
     try {
-      // Step 1: Create order server-side
-      const orderResponse = await fetch('/api/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Generate a unique booking reference ID
+      const bookingRef = `MSH-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+      // Enroll user directly in Supabase/mock layer
+      const { error } = await enrollInWorkshop(
+        user.id,
+        workshopId,
+        bookingRef,
+        null,
+        isCombo
+      );
+
+      console.log('Enrollment result:', { error });
+      if (error) {
+        if (error.message.includes('already enrolled')) {
+          showToast('You are already registered for this workshop option. ✦', 'info');
+          navigate('/');
+        } else {
+          showToast(error.message || 'Booking failed. Please try again.', 'error');
+        }
+      } else {
+        showToast('Spot reserved successfully! You are enrolled. ✦', 'success');
+
+        // Send confirmation email asynchronously (silent logging on failure)
+        const emailParams = {
+          toName: user.full_name || 'Art Lover',
+          toEmail: user.email,
           workshopTitle: workshop.title,
-          option: isCombo ? 'combo' : 'solo'
-        }),
-      });
+          workshopDate: `${workshop.date} at ${workshop.time}`,
+          amountPaid: price.toString(),
+          paymentId: bookingRef
+        };
+        console.log('[Checkout] Sending booking email with params:', emailParams);
+        sendBookingEmail(emailParams).catch((err) => {
+          console.error('[Checkout] Failed to trigger sendBookingEmail:', err);
+        });
 
-      const orderData = await orderResponse.json();
-
-      if (!orderResponse.ok) {
-        throw new Error(orderData.error || 'Failed to create order');
+        navigate('/');
       }
-
-      // Step 2: Open Razorpay checkout with server-generated order
-      const options = {
-        key: RAZORPAY_KEY_ID,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: 'MuseHaus',
-        description: workshop.title,
-        order_id: orderData.order_id, // Server-generated order ID
-        prefill: {
-          name: user?.full_name || '',
-          email: user?.email || '',
-          contact: user?.phone || '',
-        },
-        config: {
-          display: {
-            blocks: {
-              upi: { name: 'Pay via UPI', instruments: [{ method: 'upi' }] },
-              other: { name: 'Other Methods', instruments: [{ method: 'card' }, { method: 'netbanking' }, { method: 'wallet' }] },
-            },
-            sequence: ['block.upi', 'block.other'],
-            preferences: { show_default_blocks: false },
-          },
-        },
-        theme: {
-          color: '#c0623a',
-        },
-        handler: async (response) => {
-          console.log('Payment successful, Razorpay response:', response);
-          
-          // Step 3: Verify payment server-side
-          const verifyResponse = await fetch('/api/verify-payment', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            }),
-          });
-
-          const verifyData = await verifyResponse.json();
-          console.log('Payment verification result:', verifyData);
-
-          if (!verifyResponse.ok || !verifyData.verified) {
-            showToast('Payment verification failed. Please contact us if money was deducted.', 'error');
-            setPaying(false);
-            return;
-          }
-
-          // Step 4: Payment verified - enroll user
-          const { error } = await enrollInWorkshop(
-            user.id,
-            workshopId,
-            response.razorpay_payment_id,
-            response.razorpay_order_id,
-            isCombo
-          );
-
-          console.log('Enrollment result:', { error });
-          if (error) {
-            // If already enrolled, still redirect to home with info message
-            if (error.message.includes('already enrolled')) {
-              showToast('Payment successful! You were already enrolled in this workshop. ✦', 'success');
-              console.log('Redirecting to home page...');
-              navigate('/');
-            } else {
-              showToast(error.message || 'Enrollment failed after payment. Contact support.', 'error');
-            }
-          } else {
-            showToast('Payment successful! You are enrolled. ✦', 'success');
-            console.log('Redirecting to home page...');
-
-            // Send confirmation email asynchronously (silent logging on failure)
-            const emailParams = {
-              toName: user.full_name || 'Art Lover',
-              toEmail: user.email,
-              workshopTitle: workshop.title,
-              workshopDate: `${workshop.date} at ${workshop.time}`,
-              amountPaid: price.toString(),
-              paymentId: response.razorpay_payment_id
-            };
-            console.log('[Checkout] Sending booking email with params:', emailParams);
-            sendBookingEmail(emailParams).catch((err) => {
-              console.error('[Checkout] Failed to trigger sendBookingEmail:', err);
-            });
-
-            navigate('/');
-          }
-          setPaying(false);
-        },
-        modal: {
-          ondismiss: () => {
-            setPaying(false);
-            showToast('Payment cancelled.', 'info');
-          },
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', (response) => {
-        showToast(`Payment failed: ${response.error.description}`, 'error');
-        setPaying(false);
-      });
-      rzp.open();
-
     } catch (error) {
-      console.error('Payment error:', error);
-      showToast(error.message || 'Payment failed. Please try again.', 'error');
+      console.error('Booking error:', error);
+      showToast(error.message || 'Booking failed. Please try again.', 'error');
+    } finally {
       setPaying(false);
     }
   };
@@ -328,20 +220,20 @@ export default function Checkout() {
             </div>
           )}
 
-          {/* Pay button */}
+          {/* Confirm Booking button */}
           <button
-            onClick={handlePayment}
+            onClick={handleBooking}
             disabled={paying}
             className="w-full bg-terra hover:bg-terra/90 disabled:opacity-60 text-cream text-xs uppercase tracking-widest font-bold py-4 rounded-sm transition-all duration-300 shadow-md flex items-center justify-center gap-2"
           >
-            <CreditCard size={15} />
-            {paying ? 'Processing...' : `Pay ${displayPrice} via Razorpay`}
+            <CheckCircle2 size={15} />
+            {paying ? 'Processing...' : `Confirm Booking`}
           </button>
 
           {/* Trust badge */}
           <div className="flex items-center justify-center gap-2 text-[10px] text-muted">
             <ShieldCheck size={13} className="text-terra" />
-            <span>Payments secured by Razorpay</span>
+            <span>Registration is verified and secured by MuseHaus</span>
           </div>
         </div>
 

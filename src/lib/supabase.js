@@ -222,7 +222,7 @@ export async function getUser() {
 
 // --- ENROLLMENT FUNCTIONS (MOCK/LIVE HELPER) ---
 
-export async function enrollInWorkshop(userId, workshopId, razorpayPaymentId = null, razorpayOrderId = null, isCombo = false) {
+export async function enrollInWorkshop(userId, workshopId, paymentId = null, orderId = null, isCombo = false) {
   if (MOCK_MODE) {
     await delay(450);
     const enrollments = getMockData('enrollments', []);
@@ -260,10 +260,10 @@ export async function enrollInWorkshop(userId, workshopId, razorpayPaymentId = n
       workshop_id: workshopId,
       is_combo: isCombo,
       enrolled_at: new Date().toISOString(),
-      payment_status: razorpayPaymentId ? "paid" : "pending",
-      razorpay_payment_id: razorpayPaymentId || null,
-      razorpay_order_id: razorpayOrderId || null,
-      payment_verified: !!razorpayPaymentId
+      payment_status: paymentId ? "paid" : "pending",
+      razorpay_payment_id: paymentId || null,
+      razorpay_order_id: orderId || null,
+      payment_verified: !!paymentId
     };
 
     enrollments.push(newEnrollment);
@@ -281,10 +281,10 @@ export async function enrollInWorkshop(userId, workshopId, razorpayPaymentId = n
           user_id: userId,
           workshop_id: workshopId,
           is_combo: isCombo,
-          payment_status: razorpayPaymentId ? 'paid' : 'pending',
-          razorpay_payment_id: razorpayPaymentId || null,
-          razorpay_order_id: razorpayOrderId || null,
-          payment_verified: !!razorpayPaymentId
+          payment_status: paymentId ? 'paid' : 'pending',
+          razorpay_payment_id: paymentId || null,
+          razorpay_order_id: orderId || null,
+          payment_verified: !!paymentId
         }
       ])
       .select();
