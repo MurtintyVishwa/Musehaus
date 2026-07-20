@@ -12,6 +12,7 @@ const Navbar = () => {
   const closeMenu = () => setIsOpen(false);
 
   const isActive = (path) => location.pathname === path;
+  const isAdminRoute = location.pathname === '/admin';
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -27,7 +28,7 @@ const Navbar = () => {
     >
       {/* Left: Logo */}
       <Link 
-        to="/" 
+        to={isAdminRoute ? "/admin" : "/"} 
         onClick={closeMenu}
         className="font-serif text-2xl tracking-wide font-semibold select-none flex items-center gap-1 flex-shrink-0 whitespace-nowrap"
       >
@@ -40,7 +41,7 @@ const Navbar = () => {
         {navLinks.map((link) => (
           <Link
             key={link.name}
-            to={link.path}
+            to={link.name === 'Home' && isAdminRoute ? '/admin' : link.path}
             className={`text-xs uppercase tracking-[0.2em] font-medium transition-colors duration-300 relative py-1 hover:text-terra ${
               isActive(link.path) ? 'text-terra' : 'text-muted'
             }`}
@@ -117,7 +118,7 @@ const Navbar = () => {
         {navLinks.map((link) => (
           <Link
             key={link.name}
-            to={link.path}
+            to={link.name === 'Home' && isAdminRoute ? '/admin' : link.path}
             onClick={closeMenu}
             className={`text-xs uppercase tracking-[0.25em] font-medium w-full text-center py-2 transition-colors ${
               isActive(link.path) ? 'text-terra font-semibold' : 'text-muted'
