@@ -8,13 +8,13 @@ This guide provides instructions on how to set up and manage the Admin Dashboard
 
 1. Open your [Supabase Dashboard](https://supabase.com/dashboard) and select your project.
 2. Go to **SQL Editor** in the left sidebar.
-3. Click **+ New Query** and paste the following SQL block:
+3. Click **+ New Query**, paste the following SQL script, and click **Run**:
 
 ```sql
--- 1. Create PROFILES Table
+-- 1. Create PROFILES Table (if it doesn't exist)
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
-  email TEXT NOT NULL,
+  email TEXT,
   full_name TEXT,
   phone TEXT,
   is_admin BOOLEAN DEFAULT false,
@@ -22,39 +22,43 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 2. Enable Row Level Security (RLS)
+-- 2. Add is_admin column (in case profiles table already existed without it)
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS full_name TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone TEXT;
+
+-- 3. Enable Row Level Security (RLS)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- 3. RLS Policies
--- Allow users to view their own profile
-CREATE POLICY "Users can view own profile"
-ON public.profiles FOR SELECT
-TO authenticated
+-- 4. Recreate RLS Policies safely
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Admin can view all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+
+CREATE POLICY "Users can view own profile" 
+ON public.profiles FOR SELECT TO authenticated 
 USING (auth.uid() = id);
 
--- Allow admins to view all profiles
-CREATE POLICY "Admin can view all profiles"
-ON public.profiles FOR SELECT
-TO authenticated
+CREATE POLICY "Admin can view all profiles" 
+ON public.profiles FOR SELECT TO authenticated 
 USING (
   EXISTS (
-    SELECT 1 FROM public.profiles
+    SELECT 1 FROM public.profiles 
     WHERE id = auth.uid() AND is_admin = true
   )
 );
 
--- Allow authenticated users to insert/update their own profile
-CREATE POLICY "Users can insert own profile"
-ON public.profiles FOR INSERT
-TO authenticated
+CREATE POLICY "Users can insert own profile" 
+ON public.profiles FOR INSERT TO authenticated 
 WITH CHECK (auth.uid() = id);
 
-CREATE POLICY "Users can update own profile"
-ON public.profiles FOR UPDATE
-TO authenticated
+CREATE POLICY "Users can update own profile" 
+ON public.profiles FOR UPDATE TO authenticated 
 USING (auth.uid() = id);
 
--- 4. Automatic Profile Creation Trigger on New Signup
+-- 5. Automatic Profile Creation Trigger on New Signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -73,27 +77,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE TRIGGER on_auth_user_created
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 ```
 
-4. Click **Run** to execute the SQL query.
-
 ---
 
-## Part 2: Designate an Admin User
+## Part 2: Designate your account as Admin
 
-To give an account administrative access to `/admin`:
-
-1. Register an account on the MuseHaus website (or use an existing account).
-2. Open the **SQL Editor** in Supabase and run:
+Run this in the SQL Editor to give your email address administrative access:
 
 ```sql
--- Replace with the email address of your admin user:
 UPDATE public.profiles 
 SET is_admin = true 
-WHERE email = 'your-admin-email@gmail.com';
+WHERE email = 'vishwanathmurtinty@gmail.com';
 ```
 
 ---
@@ -105,17 +105,3 @@ WHERE email = 'your-admin-email@gmail.com';
    ```
    https://musehaus.vercel.app/admin
    ```
-   *(Or `http://localhost:5173/admin` during local development)*
-
-3. If a non-admin or unauthenticated user tries to open `/admin`:
-   - Unauthenticated users are redirected to `/login?redirect=/admin`.
-   - Logged-in non-admin users will see an **Access Denied** screen.
-
----
-
-## Part 4: Admin Features Overview
-
-- **Overview:** View live total booking count, verified payment count, gross revenue, workshop date, and recent activity feed.
-- **Bookings:** Full tabular list of enrollments with real-time search, status filtering (Verified vs. Pending), and **Export to CSV** button for Excel reports.
-- **Participants:** Complete user directory listing registration details and booking history.
-- **Workshop Settings:** Edit workshop title, date, time, pricing, and availability status (`open`, `almost-full`, `sold-out`).
