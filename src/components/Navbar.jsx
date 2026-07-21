@@ -1,12 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { checkIsAdmin } from '../lib/supabase';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, signOut } = useAuth();
   const location = useLocation();
+  const [isAdminUser, setIsAdminUser] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      checkIsAdmin(user.id, user.email).then(setIsAdminUser);
+    } else {
+      setIsAdminUser(false);
+    }
+  }, [user]);
 
   const handleToggle = () => setIsOpen(!isOpen);
   const closeMenu = () => setIsOpen(false);
@@ -69,6 +79,16 @@ const Navbar = () => {
                 {user.full_name || user.email}
               </span>
             </div>
+
+            {/* Admin Dashboard Button — only for admins */}
+            {isAdminUser && (
+              <Link
+                to="/admin"
+                className="bg-ink hover:bg-ink/90 text-cream text-[10px] uppercase tracking-widest font-bold px-3 py-2 rounded-sm transition-all duration-200 border border-cream/10 shadow-sm"
+              >
+                Admin
+              </Link>
+            )}
             
             <button
               onClick={signOut}
@@ -139,6 +159,17 @@ const Navbar = () => {
                 {user.full_name || user.email}
               </span>
             </div>
+
+            {/* Admin Dashboard Button — only for admins */}
+            {isAdminUser && (
+              <Link
+                to="/admin"
+                onClick={closeMenu}
+                className="w-full bg-ink hover:bg-ink/90 text-cream text-xs uppercase tracking-widest font-bold text-center py-3 rounded-sm transition-colors shadow-md border border-cream/10"
+              >
+                Admin Dashboard
+              </Link>
+            )}
             
             <button
               onClick={() => {
