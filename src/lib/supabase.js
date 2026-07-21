@@ -326,3 +326,277 @@ export async function checkExistingEnrollment(userId, workshopId, isCombo = fals
     return { data, error };
   }
 }
+
+// --- ADMIN FUNCTIONS ---
+
+export async function syncUserProfile(user) {
+  if (MOCK_MODE || !supabase || !user) return;
+  try {
+    await supabase.from('profiles').upsert({
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name || '',
+      phone: user.phone || '',
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' });
+  } catch (e) {
+    console.warn("Could not sync user profile:", e);
+  }
+}
+
+export async function checkIsAdmin(userId, userEmail = '') {
+  if (MOCK_MODE) {
+    const sessionStr = localStorage.getItem('musehaus_session');
+    const sessionUser = sessionStr ? JSON.parse(sessionStr) : null;
+    if (sessionUser?.is_admin) return true;
+    if (userEmail && (userEmail.toLowerCase().includes('admin') || userEmail.toLowerCase().includes('musehaus'))) return true;
+    return true; // Enable admin view in mock mode for testing/demo
+  }
+  
+  if (!userId) return false;
+
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!error && data) {
+      return !!data.is_admin;
+    }
+  } catch (e) {
+    console.warn("Failed checking profiles table for admin status:", e);
+  }
+
+  return false;
+}
+
+export async function getAdminOverview() {
+  if (MOCK_MODE) {
+    await delay(300);
+    const enrollments = getMockData('enrollments', []);
+    const workshops = getMockData('workshops', DEFAULT_WORKSHOPS);
+    const users = getMockData('users', []);
+
+    const totalBookings = enrollments.length;
+    const confirmedPayments = enrollments.filter(e => e.payment_verified || e.payment_status === 'paid').length;
+    const totalRevenue = enrollments.reduce((sum, e) => {
+      const amount = e.is_combo ? 799 : 499;
+      return sum + amount;
+    }, 0);
+
+    const workshopDate = workshops[0]?.date || 'Saturday, July 6, 2026';
+
+    const recentEnrollments = enrollments.slice(-5).reverse().map(e => {
+      const u = users.find(usr => usr.id === e.user_id) || {};
+      return {
+        id: e.id,
+        name: u.full_name || 'Anonymous User',
+        email: u.email || 'user@example.com',
+        enrolled_at: e.enrolled_at || new Date().toISOString(),
+        payment_verified: !!e.payment_verified || e.payment_status === 'paid',
+        payment_status: e.payment_status || 'paid',
+        is_combo: !!e.is_combo
+      };
+    });
+
+    return {
+      data: {
+        totalBookings,
+        confirmedPayments,
+        totalRevenue,
+        workshopDate,
+        recentEnrollments
+      },
+      error: null
+    };
+  }
+
+  try {
+    const { data: enrollments, error: enrollErr } = await supabase
+      .from('enrollments')
+      .select('*')
+      .order('enrolled_at', { ascending: false });
+
+    if (enrollErr) throw enrollErr;
+
+    const { data: profiles } = await supabase.from('profiles').select('*');
+    const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+
+    const { data: workshops } = await supabase.from('workshops').select('*');
+    const mainWorkshop = workshops?.[0];
+
+    const totalBookings = enrollments?.length || 0;
+    const confirmedPayments = enrollments?.filter(e => e.payment_verified || e.payment_status === 'paid').length || 0;
+    const totalRevenue = (enrollments || []).reduce((sum, e) => {
+      if (e.payment_verified || e.payment_status === 'paid') {
+        return sum + (e.is_combo ? 799 : 499);
+      }
+      return sum;
+    }, 0);
+
+    const workshopDate = mainWorkshop?.date ? `${mainWorkshop.date}` : 'Saturday, July 6, 2026';
+
+    const recentEnrollments = (enrollments || []).slice(0, 5).map(e => {
+      const profile = profileMap.get(e.user_id) || {};
+      return {
+        id: e.id,
+        name: profile.full_name || profile.email || 'Registered User',
+        email: profile.email || '—',
+        enrolled_at: e.enrolled_at,
+        payment_verified: !!e.payment_verified || e.payment_status === 'paid',
+        payment_status: e.payment_status || 'paid',
+        is_combo: !!e.is_combo
+      };
+    });
+
+    return {
+      data: {
+        totalBookings,
+        confirmedPayments,
+        totalRevenue,
+        workshopDate,
+        recentEnrollments
+      },
+      error: null
+    };
+  } catch (err) {
+    console.error("Error fetching admin overview:", err);
+    return { data: null, error: err };
+  }
+}
+
+export async function getAdminEnrollments() {
+  if (MOCK_MODE) {
+    await delay(300);
+    const enrollments = getMockData('enrollments', []);
+    const users = getMockData('users', []);
+
+    const data = enrollments.map(e => {
+      const u = users.find(usr => usr.id === e.user_id) || {};
+      return {
+        id: e.id,
+        booking_ref: e.razorpay_payment_id || e.id,
+        user_name: u.full_name || 'Guest User',
+        email: u.email || 'guest@example.com',
+        phone: u.phone || '—',
+        is_combo: !!e.is_combo,
+        amount: e.is_combo ? 799 : 499,
+        payment_verified: !!e.payment_verified || e.payment_status === 'paid',
+        payment_status: e.payment_status || 'paid',
+        enrolled_at: e.enrolled_at || new Date().toISOString()
+      };
+    });
+
+    return { data, error: null };
+  }
+
+  try {
+    const { data: enrollments, error } = await supabase
+      .from('enrollments')
+      .select('*')
+      .order('enrolled_at', { ascending: false });
+
+    if (error) throw error;
+
+    const { data: profiles } = await supabase.from('profiles').select('*');
+    const profileMap = new Map((profiles || []).map(p => [p.id, p]));
+
+    const data = (enrollments || []).map(e => {
+      const p = profileMap.get(e.user_id) || {};
+      return {
+        id: e.id,
+        booking_ref: e.razorpay_payment_id || e.id.substring(0, 8),
+        user_name: p.full_name || p.email || 'Registered User',
+        email: p.email || '—',
+        phone: p.phone || '—',
+        is_combo: !!e.is_combo,
+        amount: e.is_combo ? 799 : 499,
+        payment_verified: !!e.payment_verified || e.payment_status === 'paid',
+        payment_status: e.payment_status || 'paid',
+        enrolled_at: e.enrolled_at
+      };
+    });
+
+    return { data, error: null };
+  } catch (err) {
+    console.error("Error fetching admin enrollments:", err);
+    return { data: [], error: err };
+  }
+}
+
+export async function getAdminParticipants() {
+  if (MOCK_MODE) {
+    await delay(300);
+    const users = getMockData('users', []);
+    const enrollments = getMockData('enrollments', []);
+
+    const data = users.map(u => {
+      const hasBooked = enrollments.some(e => e.user_id === u.id);
+      return {
+        id: u.id,
+        full_name: u.full_name || 'Member',
+        email: u.email,
+        phone: u.phone || '—',
+        created_at: u.created_at || new Date().toISOString(),
+        has_booked: hasBooked,
+        is_admin: !!u.is_admin
+      };
+    });
+
+    return { data, error: null };
+  }
+
+  try {
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    const { data: enrollments } = await supabase.from('enrollments').select('user_id');
+    const bookedSet = new Set((enrollments || []).map(e => e.user_id));
+
+    const data = (profiles || []).map(p => ({
+      id: p.id,
+      full_name: p.full_name || 'Member',
+      email: p.email,
+      phone: p.phone || '—',
+      created_at: p.created_at,
+      has_booked: bookedSet.has(p.id),
+      is_admin: !!p.is_admin
+    }));
+
+    return { data, error: null };
+  } catch (err) {
+    console.error("Error fetching admin participants:", err);
+    return { data: [], error: err };
+  }
+}
+
+export async function updateWorkshopDetails(workshopId, updatedFields) {
+  if (MOCK_MODE) {
+    await delay(300);
+    const workshops = getMockData('workshops', DEFAULT_WORKSHOPS);
+    const idx = workshops.findIndex(w => w.id === workshopId);
+    if (idx !== -1) {
+      workshops[idx] = { ...workshops[idx], ...updatedFields };
+      setMockData('workshops', workshops);
+    }
+    return { data: workshops ? workshops[idx] : null, error: null };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('workshops')
+      .update(updatedFields)
+      .eq('id', workshopId)
+      .select();
+
+    return { data: data ? data[0] : null, error };
+  } catch (err) {
+    return { data: null, error: err };
+  }
+}

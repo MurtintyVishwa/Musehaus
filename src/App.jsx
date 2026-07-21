@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -10,11 +10,42 @@ import Contact from './pages/Contact';
 import Story from './pages/Story';
 import Checkout from './pages/Checkout';
 import ResetPassword from './pages/ResetPassword';
+import Admin from './pages/Admin';
 import ScrollToTop from './components/ScrollToTop';
 
 // Context Providers
 import { ToastProvider } from './context/ToastContext';
 import { AuthProvider } from './context/AuthContext';
+
+function AppContent() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname === '/admin';
+
+  return (
+    <div className="flex flex-col min-h-screen bg-cream text-ink select-none font-sans">
+      {/* Sticky Navigation Header (hidden on Admin Dashboard) */}
+      {!isAdminRoute && <Navbar />}
+      
+      {/* Main Page Content Area */}
+      <main className="flex-grow">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/workshops" element={<Workshops />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/story" element={<Story />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/admin" element={<Admin />} />
+        </Routes>
+      </main>
+
+      {/* Global Footer (hidden on Admin Dashboard) */}
+      {!isAdminRoute && <Footer />}
+    </div>
+  );
+}
 
 function App() {
   return (
@@ -22,27 +53,7 @@ function App() {
       <ScrollToTop />
       <ToastProvider>
         <AuthProvider>
-          <div className="flex flex-col min-h-screen bg-cream text-ink select-none font-sans">
-            {/* Sticky Navigation Header */}
-            <Navbar />
-            
-            {/* Main Page Content Area */}
-            <main className="flex-grow">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/workshops" element={<Workshops />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/story" element={<Story />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-              </Routes>
-            </main>
-
-            {/* Global Footer */}
-            <Footer />
-          </div>
+          <AppContent />
         </AuthProvider>
       </ToastProvider>
     </Router>

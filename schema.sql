@@ -72,3 +72,53 @@ VALUES
   ('Watercolour for Beginners', 'Anika Rao', 'AR', 'painting', 'beginner', 'July 19, 2026', '11:00 AM – 2:00 PM', 3, 2200.00, 12, 6, 'open', 'from-[#e8a87c] to-[#c0623a]'),
   ('Glaze Chemistry & Firing', 'Kenji Lam', 'KL', 'ceramics', 'intermediate', 'August 2, 2026', '10:00 AM – 4:00 PM', 6, 5000.00, 12, 2, 'almost-full', 'from-[#9ab8cc] to-[#4a7a9b]')
 ON CONFLICT DO NOTHING;
+
+
+-- 4. Create PROFILES Table
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  email TEXT NOT NULL,
+  full_name TEXT,
+  phone TEXT,
+  is_admin BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Enable RLS
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT TO authenticated USING (auth.uid() = id);
+
+CREATE POLICY "Admin can view all profiles" ON public.profiles FOR SELECT TO authenticated USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_admin = true)
+);
+
+CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT TO authenticated WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
+
+-- Trigger for Auto Creation
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, phone)
+  VALUES (
+    new.id,
+    new.email,
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'phone'
+  )
+  ON CONFLICT (id) DO UPDATE
+  SET email = EXCLUDED.email,
+      full_name = EXCLUDED.full_name,
+      phone = EXCLUDED.phone;
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
