@@ -356,6 +356,13 @@ export async function checkIsAdmin(userId, userEmail = '') {
   if (!userId) return false;
 
   try {
+    // Step 1: Check JWT user_metadata.is_admin (fastest, no DB call, no RLS issues)
+    const { data: { user: sessionUser } } = await supabase.auth.getUser();
+    if (sessionUser?.user_metadata?.is_admin === true) {
+      return true;
+    }
+
+    // Step 2: Fall back to profiles table query
     const { data, error } = await supabase
       .from('profiles')
       .select('is_admin')
@@ -366,11 +373,12 @@ export async function checkIsAdmin(userId, userEmail = '') {
       return !!data.is_admin;
     }
   } catch (e) {
-    console.warn("Failed checking profiles table for admin status:", e);
+    console.warn("Failed checking admin status:", e);
   }
 
   return false;
 }
+
 
 export async function getAdminOverview() {
   if (MOCK_MODE) {
