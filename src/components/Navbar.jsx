@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, User, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -11,22 +11,7 @@ const Navbar = () => {
   const handleToggle = () => setIsOpen(!isOpen);
   const closeMenu = () => setIsOpen(false);
 
-  const handleAdminHomeClick = () => {
-    if (isAdminRoute) {
-      sessionStorage.removeItem('musehaus_admin_logged_in');
-    }
-    closeMenu();
-  };
-
   const isActive = (path) => location.pathname === path;
-  const isAdminRoute = location.pathname === '/admin';
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(
-    () => sessionStorage.getItem('musehaus_admin_logged_in') === 'true'
-  );
-
-  useEffect(() => {
-    setIsAdminLoggedIn(sessionStorage.getItem('musehaus_admin_logged_in') === 'true');
-  }, [location]);
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -35,32 +20,27 @@ const Navbar = () => {
     { name: 'Contact', path: '/contact' }
   ];
 
-  const displayedLinks = isAdminLoggedIn 
-    ? navLinks.filter(link => link.name !== 'Home')
-    : navLinks;
-
   return (
     <nav 
-      className="sticky top-0 z-50 h-16 backdrop-blur-sm border-b border-ink/10 flex items-center justify-between px-6 md:px-12 transition-all relative"
+      className="sticky top-0 z-50 h-16 backdrop-blur-sm border-b border-ink/10 flex items-center justify-between px-6 md:px-12 transition-all"
       style={{ backgroundColor: 'rgba(245, 240, 232, 0.96)' }}
     >
       {/* Left: Logo */}
       <Link 
-        to={isAdminRoute ? "/admin" : "/"} 
-        onClick={handleAdminHomeClick}
+        to="/" 
+        onClick={closeMenu}
         className="font-serif text-2xl tracking-wide font-semibold select-none flex items-center gap-1 flex-shrink-0 whitespace-nowrap"
       >
         <span className="text-ink" style={{ color: '#1a1a18' }}>Muse</span>
         <span className="text-terra" style={{ color: '#c0623a' }}>Haus</span>
       </Link>
 
-      {/* Center: Navigation Links (Desktop) — absolutely centered */}
-      <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
-        {displayedLinks.map((link) => (
+      {/* Center: Navigation Links (Desktop) */}
+      <div className="hidden md:flex items-center gap-8">
+        {navLinks.map((link) => (
           <Link
             key={link.name}
-            to={link.name === 'Home' && isAdminRoute ? '/admin' : link.path}
-            onClick={link.name === 'Home' ? handleAdminHomeClick : closeMenu}
+            to={link.path}
             className={`text-xs uppercase tracking-[0.2em] font-medium transition-colors duration-300 relative py-1 hover:text-terra ${
               isActive(link.path) ? 'text-terra' : 'text-muted'
             }`}
@@ -72,7 +52,6 @@ const Navbar = () => {
           </Link>
         ))}
       </div>
-
 
       {/* Right: Auth Actions (Desktop) */}
       <div className="hidden md:flex items-center gap-4">
@@ -100,15 +79,6 @@ const Navbar = () => {
               <span>Sign Out</span>
             </button>
           </div>
-        ) : isAdminLoggedIn ? (
-          !isAdminRoute ? (
-            <Link
-              to="/admin"
-              className="bg-terra hover:bg-terra/90 text-cream text-xs uppercase tracking-[0.15em] font-medium px-5 py-2.5 rounded-sm transition-all duration-300 shadow-md border border-terra/20"
-            >
-              Back to Dashboard
-            </Link>
-          ) : null
         ) : (
           <>
             <Link
@@ -144,11 +114,11 @@ const Navbar = () => {
             : 'opacity-0 -translate-y-4 invisible pointer-events-none'
         }`}
       >
-        {displayedLinks.map((link) => (
+        {navLinks.map((link) => (
           <Link
             key={link.name}
-            to={link.name === 'Home' && isAdminRoute ? '/admin' : link.path}
-            onClick={link.name === 'Home' ? handleAdminHomeClick : closeMenu}
+            to={link.path}
+            onClick={closeMenu}
             className={`text-xs uppercase tracking-[0.25em] font-medium w-full text-center py-2 transition-colors ${
               isActive(link.path) ? 'text-terra font-semibold' : 'text-muted'
             }`}
@@ -181,16 +151,6 @@ const Navbar = () => {
               <span>Sign Out</span>
             </button>
           </div>
-        ) : isAdminLoggedIn ? (
-          !isAdminRoute ? (
-            <Link
-              to="/admin"
-              onClick={closeMenu}
-              className="w-full bg-terra hover:bg-terra/90 text-cream text-xs uppercase tracking-[0.15em] font-medium text-center py-3 rounded-sm transition-colors shadow-md border border-terra/20"
-            >
-              Back to Dashboard
-            </Link>
-          ) : null
         ) : (
           <div className="w-full flex flex-col gap-3">
             <Link

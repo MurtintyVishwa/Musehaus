@@ -40,9 +40,6 @@ CREATE TABLE IF NOT EXISTS public.enrollments (
     razorpay_payment_id TEXT,  -- repurposed: stores booking reference ID (e.g. MSH-XXXXXXXX)
     razorpay_order_id TEXT,    -- reserved for future payment gateway integration
     payment_verified BOOLEAN DEFAULT false,
-    customer_name TEXT,
-    customer_email TEXT,
-    customer_phone TEXT,
     
     -- Ensure user cannot enroll in the same workshop option multiple times
     CONSTRAINT unique_user_workshop_combo UNIQUE (user_id, workshop_id, is_combo)
@@ -51,11 +48,11 @@ CREATE TABLE IF NOT EXISTS public.enrollments (
 -- Enable Row Level Security (RLS) on Enrollments
 ALTER TABLE public.enrollments ENABLE ROW LEVEL SECURITY;
 
--- Allow users to read their own enrollments OR allow admin to read all
-CREATE POLICY "Allow users and admin to select enrollments" 
+-- Allow users to read their own enrollments only
+CREATE POLICY "Allow users to select their own enrollments" 
 ON public.enrollments FOR SELECT 
 TO authenticated 
-USING (auth.uid() = user_id OR auth.jwt() ->> 'email' = 'musehaus14@gmail.com');
+USING (auth.uid() = user_id);
 
 -- Allow authenticated users to insert their own enrollments
 CREATE POLICY "Allow users to enroll in workshops" 
@@ -63,77 +60,8 @@ ON public.enrollments FOR INSERT
 TO authenticated 
 WITH CHECK (auth.uid() = user_id);
 
--- Allow admin to delete/cleanup enrollments older than 60 days
-CREATE POLICY "Allow admin to delete enrollments"
-ON public.enrollments FOR DELETE
-TO authenticated
-USING (auth.jwt() ->> 'email' = 'musehaus14@gmail.com');
 
-
--- 3. Create PROFILES Table to track registered users
-CREATE TABLE IF NOT EXISTS public.profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    full_name TEXT,
-    email TEXT,
-    phone TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
-);
-
--- Enable Row Level Security (RLS) on Profiles
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-
--- Allow select to authenticated users (admin can see all, users can see themselves)
-CREATE POLICY "Allow authenticated users to read profiles" 
-ON public.profiles FOR SELECT 
-TO authenticated 
-USING (auth.uid() = id OR auth.jwt() ->> 'email' = 'musehaus14@gmail.com');
-
--- Allow insert/update to users for their own profile
-CREATE POLICY "Allow users to insert their own profile" 
-ON public.profiles FOR INSERT 
-TO authenticated 
-WITH CHECK (auth.uid() = id);
-
-CREATE POLICY "Allow users to update their own profile"
-ON public.profiles FOR UPDATE
-TO authenticated
-USING (auth.uid() = id);
-
--- Database trigger to automatically sync auth.users with public.profiles on signup/Google OAuth
-CREATE OR REPLACE FUNCTION public.handle_new_user() 
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO public.profiles (id, full_name, email, phone)
-  VALUES (
-    new.id,
-    COALESCE(new.raw_user_meta_data->>'full_name', ''),
-    new.email,
-    COALESCE(new.raw_user_meta_data->>'phone', '')
-  )
-  ON CONFLICT (id) DO UPDATE
-  SET full_name = EXCLUDED.full_name,
-      phone = EXCLUDED.phone;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE OR REPLACE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
--- Backfill trigger for existing auth users into public.profiles
-INSERT INTO public.profiles (id, full_name, email, phone, created_at)
-SELECT 
-  id, 
-  COALESCE(raw_user_meta_data->>'full_name', ''), 
-  email, 
-  COALESCE(raw_user_meta_data->>'phone', ''),
-  created_at
-FROM auth.users
-ON CONFLICT (id) DO NOTHING;
-
-
--- 4. Seed WORKSHOPS Data
+-- 3. Seed WORKSHOPS Data
 INSERT INTO public.workshops 
   (title, instructor_name, instructor_avatar_initials, medium, level, date, time, duration_hours, price, seats_total, seats_remaining, status, gradient_style) 
 VALUES

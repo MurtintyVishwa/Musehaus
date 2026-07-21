@@ -12,7 +12,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 const isValidUrl = supabaseUrl && supabaseUrl.startsWith('http') && !supabaseUrl.includes('your_supabase');
 const isValidKey = supabaseAnonKey && supabaseAnonKey.length > 20 && !supabaseAnonKey.includes('your_supabase');
 
-export const MOCK_MODE = MOCK_MODE_SETTING || !isValidUrl || !isValidKey;
+const MOCK_MODE = MOCK_MODE_SETTING || !isValidUrl || !isValidKey;
 
 if (MOCK_MODE && !MOCK_MODE_SETTING) {
   console.warn(
@@ -153,22 +153,6 @@ export async function signUp(email, password, fullName, phone, interests = []) {
     });
 
     if (error) return { data: null, error };
-
-    // Insert profile data into public.profiles for admin dashboard visibility
-    if (data.user) {
-      try {
-        await supabase.from('profiles').upsert({
-          id: data.user.id,
-          full_name: fullName,
-          email: email,
-          phone: phone,
-          created_at: data.user.created_at || new Date().toISOString()
-        });
-      } catch (profileErr) {
-        console.error("Profile sync failed:", profileErr);
-      }
-    }
-
     return { 
       data: { 
         user: normalizeUser(data.user), 
@@ -270,9 +254,6 @@ export async function enrollInWorkshop(userId, workshopId, paymentId = null, ord
     }
 
     // Create enrollment
-    const users = getMockData('users', []);
-    const currentUser = users.find(u => u.id === userId);
-
     const newEnrollment = {
       id: `enr_${Math.random().toString(36).substr(2, 9)}`,
       user_id: userId,
@@ -282,10 +263,7 @@ export async function enrollInWorkshop(userId, workshopId, paymentId = null, ord
       payment_status: paymentId ? "paid" : "pending",
       razorpay_payment_id: paymentId || null,
       razorpay_order_id: orderId || null,
-      payment_verified: !!paymentId,
-      customer_name: currentUser?.full_name || 'Art Lover',
-      customer_email: currentUser?.email || '',
-      customer_phone: currentUser?.phone || ''
+      payment_verified: !!paymentId
     };
 
     enrollments.push(newEnrollment);
@@ -296,19 +274,6 @@ export async function enrollInWorkshop(userId, workshopId, paymentId = null, ord
 
     return { data: newEnrollment, error: null };
   } else {
-    // Retrieve metadata to write to table
-    let name = '';
-    let email = '';
-    let phone = '';
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      name = user?.user_metadata?.full_name || '';
-      email = user?.email || '';
-      phone = user?.user_metadata?.phone || '';
-    } catch (e) {
-      console.error("Failed to fetch user session info for enrollment logging", e);
-    }
-
     const { data, error } = await supabase
       .from('enrollments')
       .insert([
@@ -319,10 +284,7 @@ export async function enrollInWorkshop(userId, workshopId, paymentId = null, ord
           payment_status: paymentId ? 'paid' : 'pending',
           razorpay_payment_id: paymentId || null,
           razorpay_order_id: orderId || null,
-          payment_verified: !!paymentId,
-          customer_name: name,
-          customer_email: email,
-          customer_phone: phone
+          payment_verified: !!paymentId
         }
       ])
       .select();
@@ -362,115 +324,5 @@ export async function checkExistingEnrollment(userId, workshopId, isCombo = fals
       .eq('is_combo', isCombo)
       .maybeSingle();
     return { data, error };
-  }
-}
-
-export async function getAdminEnrollments() {
-  const sixtyDaysAgo = new Date();
-  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-  const cutoffStr = sixtyDaysAgo.toISOString();
-
-  if (MOCK_MODE) {
-    const users = getMockData('users', []);
-    const enrollments = getMockData('enrollments', []);
-    const workshops = getMockData('workshops', DEFAULT_WORKSHOPS);
-
-    // Auto-delete mock entries older than 60 days
-    const activeEnrollments = enrollments.filter(e => new Date(e.enrolled_at) >= sixtyDaysAgo);
-    if (activeEnrollments.length !== enrollments.length) {
-      setMockData('enrollments', activeEnrollments);
-    }
-    
-    // Group enrollments by user and map to match user table structure
-    const enriched = users.map(u => {
-      const userEnrollments = activeEnrollments.filter(e => e.user_id === u.id);
-      const packages = userEnrollments.map(e => {
-        const w = workshops.find(wrk => wrk.id === e.workshop_id);
-        return `${w?.title || 'Workshop'}${e.is_combo ? ' (Combo)' : ' (Solo)'}`;
-      }).join(', ');
-
-      return {
-        id: u.id,
-        user_id: u.id,
-        customer_name: u.full_name || 'Art Lover',
-        customer_email: u.email || '',
-        customer_phone: u.phone || '',
-        enrolled_at: u.created_at || new Date().toISOString(),
-        registered_packages: packages || '—',
-        workshops: { title: packages || '—', date: '' }
-      };
-    });
-
-    return { data: enriched, error: null };
-  } else {
-    try {
-      // 1. Delete enrollments older than 60 days automatically from the DB
-      await supabase
-        .from('enrollments')
-        .delete()
-        .lt('enrolled_at', cutoffStr);
-    } catch (e) {
-      console.error("Auto delete cleanup error:", e);
-    }
-
-    // 2. Query ALL registered users from profiles, with their enrollments
-    const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, full_name, email, phone, created_at')
-      .order('created_at', { ascending: false });
-
-    if (profilesError) {
-      console.warn("Profiles table not found, falling back to enrollments query:", profilesError);
-      
-      // Fallback query directly on enrollments
-      const { data: enrollments, error: enrollError } = await supabase
-        .from('enrollments')
-        .select('*, workshops(title, date)')
-        .order('enrolled_at', { ascending: false });
-
-      if (enrollError) return { data: null, error: enrollError };
-
-      const formatted = (enrollments || []).map(e => ({
-        id: e.id,
-        user_id: e.user_id,
-        customer_name: e.customer_name || 'Art Lover',
-        customer_email: e.customer_email || '—',
-        customer_phone: e.customer_phone || '—',
-        enrolled_at: e.enrolled_at,
-        registered_packages: `${e.workshops?.title || 'Workshop'}${e.is_combo ? ' (Combo)' : ' (Solo)'}`,
-        workshops: { title: `${e.workshops?.title || 'Workshop'}${e.is_combo ? ' (Combo)' : ' (Solo)'}`, date: '' }
-      }));
-
-      return { data: formatted, error: null };
-    }
-
-    // 3. For each user, fetch their active enrollments
-    const enriched = await Promise.all(
-      (profiles || []).map(async (profile) => {
-        const { data: userEnrollments } = await supabase
-          .from('enrollments')
-          .select('id, enrolled_at, is_combo, workshops(title, date)')
-          .eq('user_id', profile.id)
-          .gte('enrolled_at', cutoffStr)
-          .order('enrolled_at', { ascending: false });
-
-        const packages = (userEnrollments || []).map(e =>
-          `${e.workshops?.title || 'Workshop'}${e.is_combo ? ' (Combo)' : ' (Solo)'}`
-        ).join(', ');
-
-        return {
-          id: profile.id,
-          user_id: profile.id,
-          customer_name: profile.full_name || '',
-          customer_email: profile.email || '',
-          customer_phone: profile.phone || '',
-          enrolled_at: profile.created_at,
-          registered_packages: packages || '—',
-          workshops: { title: packages || '—', date: '' }
-        };
-      })
-    );
-
-    return { data: enriched, error: null };
   }
 }
