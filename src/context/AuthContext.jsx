@@ -3,6 +3,7 @@ import {
   signIn as apiSignIn, 
   signUp as apiSignUp, 
   signOut as apiSignOut,
+  syncUserProfile,
   supabase
 } from '../lib/supabase';
 import { useToast } from './ToastContext';
@@ -21,7 +22,9 @@ export const AuthProvider = ({ children }) => {
       // Get existing session on mount
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
-          setUser(normalizeUser(session.user));
+          const norm = normalizeUser(session.user);
+          setUser(norm);
+          syncUserProfile(norm);
         }
         setLoading(false);
       });
@@ -29,7 +32,9 @@ export const AuthProvider = ({ children }) => {
       // Listen for auth state changes (login, logout, token refresh)
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         if (session?.user) {
-          setUser(normalizeUser(session.user));
+          const norm = normalizeUser(session.user);
+          setUser(norm);
+          syncUserProfile(norm);
         } else {
           setUser(null);
         }

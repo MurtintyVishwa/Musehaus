@@ -332,13 +332,15 @@ export async function checkExistingEnrollment(userId, workshopId, isCombo = fals
 export async function syncUserProfile(user) {
   if (MOCK_MODE || !supabase || !user) return;
   try {
-    await supabase.from('profiles').upsert({
+    const payload = {
       id: user.id,
       email: user.email,
-      full_name: user.full_name || '',
-      phone: user.phone || '',
       updated_at: new Date().toISOString()
-    }, { onConflict: 'id' });
+    };
+    if (user.full_name) payload.full_name = user.full_name;
+    if (user.phone) payload.phone = user.phone;
+
+    await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
   } catch (e) {
     console.warn("Could not sync user profile:", e);
   }
