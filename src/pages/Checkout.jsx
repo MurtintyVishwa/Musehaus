@@ -6,8 +6,8 @@ import { enrollInWorkshop, getActiveWorkshops, checkExistingEnrollment } from '.
 import { ArrowLeft, ShieldCheck, CheckCircle2, QrCode, Smartphone, Info } from 'lucide-react';
 import { sendBookingEmail } from '../lib/email';
 
-// Configurable UPI details for the business (Primary VPA for Avala Supriya)
-const MERCHANT_UPI_ID = '8309978539@ybl';
+// Configurable UPI details for the business
+const MERCHANT_UPI_ID = 'avala.supriya@oksbi';
 const MERCHANT_NAME = 'Avala Supriya';
 
 export default function Checkout() {
@@ -318,7 +318,7 @@ export default function Checkout() {
                     </div>
 
                     <p className="text-[10px] text-muted font-light italic">
-                      Tip: You can also copy the UPI ID above or search <strong>8309978539</strong> directly in GPay/PhonePe to pay!
+                      Tip: You can also copy the UPI ID above or search <strong>avala.supriya@oksbi</strong> directly in GPay/PhonePe/Paytm!
                     </p>
                   </>
                 ) : (
