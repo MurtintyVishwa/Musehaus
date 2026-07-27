@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Award, Sparkles } from 'lucide-react';
-import { getActiveWorkshops, enrollInWorkshop, getUserEnrollments } from '../lib/supabase';
+import { getActiveWorkshops, getUserEnrollments } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import WorkshopCard from '../components/WorkshopCard';
@@ -47,20 +47,8 @@ export default function Home() {
     loadData();
   }, [user]);
 
-  const handleEnroll = async (workshopId) => {
-    if (!user) {
-      showToast("Please register or log in to reserve a seat.", "info");
-      navigate(`/register?workshop=${workshopId}`);
-      return;
-    }
-
-    const { error } = await enrollInWorkshop(user.id, workshopId);
-    if (error) {
-      showToast(error.message, "error");
-    } else {
-      showToast("Seat reserved successfully!", "success");
-      loadData();
-    }
+  const handleEnroll = (workshopId, isCombo = false) => {
+    navigate(`/checkout?workshop=${workshopId}${isCombo ? '&combo=true' : ''}`);
   };
 
   return (

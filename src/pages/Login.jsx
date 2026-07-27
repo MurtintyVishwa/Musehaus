@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { enrollInWorkshop, supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { Eye, EyeOff, Sparkles, X } from 'lucide-react';
 
 // Google colored G SVG icon
@@ -73,22 +73,19 @@ export default function Login() {
     if (success) {
       showToast("Welcome back to MuseHaus ✦", "success");
       
-      // If they came from a workshop registration flow, automatically enroll them
-      if (targetWorkshopId) {
-        try {
-          const session = JSON.parse(localStorage.getItem('musehaus_session'));
-          if (session?.id) {
-            await enrollInWorkshop(session.id, parseInt(targetWorkshopId));
-            showToast("Successfully enrolled in your selected workshop! ✦", "success");
-          }
-        } catch (err) {
-          console.error("Auto enrollment failed", err);
-        }
+      const redirectUrl = searchParams.get('redirect');
+      const isCombo = searchParams.get('combo') === 'true';
+      let destination = '/';
+
+      if (redirectUrl) {
+        destination = redirectUrl;
+      } else if (targetWorkshopId) {
+        destination = `/checkout?workshop=${targetWorkshopId}${isCombo ? '&combo=true' : ''}`;
       }
 
       setTimeout(() => {
-        navigate('/');
-      }, 1500);
+        navigate(destination);
+      }, 1000);
     } else {
       setIsSubmitting(false);
     }

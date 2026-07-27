@@ -124,7 +124,7 @@ const WorkshopCard = ({ workshop, onEnroll, isEnrolled }) => {
           </div>
         </div>
 
-        {/* Call to Action Button */}
+        {/* Call to Action Buttons */}
         <div className="border-t border-ink/5 pt-4">
           {isEnrolled ? (
             <button
@@ -141,12 +141,20 @@ const WorkshopCard = ({ workshop, onEnroll, isEnrolled }) => {
               {status === 'sold-out' ? 'Sold Out' : status === 'completed' ? 'Completed' : 'Cancelled'}
             </button>
           ) : (
-            <button
-              onClick={() => onEnroll ? onEnroll(id) : navigate(`/register?workshop=${id}`)}
-              className="w-full bg-terra hover:bg-terra/90 text-cream text-xs uppercase tracking-widest font-bold py-3 rounded-sm text-center transition-all duration-300 shadow-md border border-terra/20"
-            >
-              Register Now
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => onEnroll ? onEnroll(id, false) : navigate(`/checkout?workshop=${id}`)}
+                className="w-full bg-terra hover:bg-terra/90 text-cream text-xs uppercase tracking-widest font-bold py-2.5 rounded-sm text-center transition-all duration-300 shadow-md border border-terra/20"
+              >
+                Book Single — ₹{price}
+              </button>
+              <button
+                onClick={() => onEnroll ? onEnroll(id, true) : navigate(`/checkout?workshop=${id}&combo=true`)}
+                className="w-full bg-transparent hover:bg-terra/10 text-terra text-xs uppercase tracking-widest font-bold py-2.5 rounded-sm text-center transition-all duration-300 border border-terra/40"
+              >
+                Book Combo (2) — ₹{workshop.combo_price || 799}
+              </button>
+            </div>
           )}
         </div>
 
