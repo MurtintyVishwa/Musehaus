@@ -7,8 +7,8 @@ import { ArrowLeft, ShieldCheck, CheckCircle2, QrCode, Smartphone, Info } from '
 import { sendBookingEmail } from '../lib/email';
 
 // Configurable UPI details for the business
-const MERCHANT_UPI_ID = '7093666568@ybl'; // Primary VPA handle (works cleanly across all UPI apps)
-const MERCHANT_NAME = 'Vishwanath Murtinty';
+const MERCHANT_UPI_ID = '8309978539-t7d7@axl';
+const MERCHANT_NAME = 'Avala Supriya';
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
@@ -70,9 +70,8 @@ export default function Checkout() {
   const displayPrice = isCombo ? `₹${workshop?.combo_price ?? 799}` : `₹${workshop?.price || 499}`;
   const label = isCombo ? 'Combo (2 members)' : 'Single seat';
 
-  // Construct clean UPI deep-link URL scheme (compatible with personal and business VPAs without triggering NPCI security flags)
-  const upiNote = `MuseHaus Atelier`;
-  const upiUrl = `upi://pay?pa=${MERCHANT_UPI_ID}&pn=${encodeURIComponent(MERCHANT_NAME)}&am=${price}&cu=INR&tn=${encodeURIComponent(upiNote)}`;
+  // Construct minimal, clean UPI deep-link URL scheme (omitting tn and tr which trigger NPCI security blocks on personal VPAs)
+  const upiUrl = `upi://pay?pa=${MERCHANT_UPI_ID}&pn=${encodeURIComponent(MERCHANT_NAME)}&am=${price}&cu=INR`;
 
   // Dynamic QR Code using public qrserver API
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(upiUrl)}`;
@@ -300,6 +299,27 @@ export default function Checkout() {
                     >
                       Open UPI Apps (₹{price})
                     </button>
+
+                    <div className="w-full bg-white p-3 rounded border border-ink/10 text-left flex items-center justify-between mt-2">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-muted font-semibold">Payee UPI ID</p>
+                        <p className="text-xs font-mono font-bold text-ink">{MERCHANT_UPI_ID}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(MERCHANT_UPI_ID);
+                          showToast('UPI ID copied to clipboard! ✦', 'success');
+                        }}
+                        className="bg-cream hover:bg-ink/5 text-ink text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded border border-ink/15 transition-all"
+                      >
+                        Copy UPI ID
+                      </button>
+                    </div>
+
+                    <p className="text-[10px] text-muted font-light italic">
+                      Tip: You can also copy the UPI ID above or search <strong>8309978539</strong> directly in GPay/PhonePe to pay!
+                    </p>
                   </>
                 ) : (
                   <>
