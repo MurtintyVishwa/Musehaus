@@ -70,9 +70,9 @@ export default function Checkout() {
   const displayPrice = isCombo ? `₹${workshop?.combo_price ?? 799}` : `₹${workshop?.price || 499}`;
   const label = isCombo ? 'Combo (2 members)' : 'Single seat';
 
-  // Construct UPI deep-link URL scheme
-  const upiNote = `MuseHaus - ${workshop?.title ? workshop.title.substring(0, 20) : 'Workshop'}`;
-  const upiUrl = `upi://pay?pa=${MERCHANT_UPI_ID}&pn=${encodeURIComponent(MERCHANT_NAME)}&tr=${transactionId}&am=${price}&cu=INR&tn=${encodeURIComponent(upiNote)}`;
+  // Construct clean UPI deep-link URL scheme (compatible with personal and business VPAs without triggering NPCI security flags)
+  const upiNote = `MuseHaus Atelier`;
+  const upiUrl = `upi://pay?pa=${MERCHANT_UPI_ID}&pn=${encodeURIComponent(MERCHANT_NAME)}&am=${price}&cu=INR&tn=${encodeURIComponent(upiNote)}`;
 
   // Dynamic QR Code using public qrserver API
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(upiUrl)}`;
@@ -81,7 +81,7 @@ export default function Checkout() {
     // Open UPI link - on mobile this triggers OS to list payment apps
     window.location.href = upiUrl;
     setShowVerificationForm(true);
-    showToast('Redirecting to UPI apps...', 'success');
+    showToast('Opening UPI payment app...', 'success');
   };
 
   const handleBookingSubmit = async (e) => {
