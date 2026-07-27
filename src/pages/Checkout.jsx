@@ -6,8 +6,8 @@ import { enrollInWorkshop, getActiveWorkshops, checkExistingEnrollment } from '.
 import { ArrowLeft, ShieldCheck, CheckCircle2, QrCode, Smartphone, Info } from 'lucide-react';
 import { sendBookingEmail } from '../lib/email';
 
-// Configurable UPI details for the business
-const MERCHANT_UPI_ID = '8309978539-t7d7@axl';
+// Configurable UPI details for the business (Primary VPA for Avala Supriya)
+const MERCHANT_UPI_ID = '8309978539@ybl';
 const MERCHANT_NAME = 'Avala Supriya';
 
 export default function Checkout() {
