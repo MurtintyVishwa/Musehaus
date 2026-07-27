@@ -774,20 +774,6 @@ export async function deleteParticipant(userId) {
   }
 
   try {
-    const { error: enrollError } = await supabase
-      .from('enrollments')
-      .delete()
-      .eq('user_id', userId);
-
-    if (enrollError) throw enrollError;
-
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', userId);
-
-    if (profileError) throw profileError;
-
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) {
       throw new Error('Not authenticated');
@@ -803,8 +789,21 @@ export async function deleteParticipant(userId) {
     });
 
     const result = await response.json().catch(() => ({}));
+
     if (!response.ok) {
-      throw new Error(result.error || 'Failed to delete auth account');
+      // If server configuration (SUPABASE_SERVICE_ROLE_KEY) is missing in Vercel, fallback to deleting profile and enrollments directly via client SDK
+      if (response.status === 500 && (result.error?.includes('SUPABASE_SERVICE_ROLE_KEY') || result.error?.includes('configuration missing'))) {
+        console.warn("API missing SUPABASE_SERVICE_ROLE_KEY. Deleting from enrollments and profiles tables directly...");
+        
+        await supabase.from('enrollments').delete().eq('user_id', userId);
+        await supabase.from('profiles').delete().eq('id', userId);
+
+        return {
+          error: new Error('User profile & bookings removed from dashboard. To permanently delete auth logins, add SUPABASE_SERVICE_ROLE_KEY to Vercel Environment Variables.')
+        };
+      }
+
+      throw new Error(result.error || 'Failed to delete user account');
     }
 
     return { error: null };

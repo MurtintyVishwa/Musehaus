@@ -105,3 +105,18 @@ WHERE email = 'vishwanathmurtinty@gmail.com';
    ```
    https://musehaus.vercel.app/admin
    ```
+
+---
+
+## Part 4: Delete User Functionality (Vercel Environment Setup)
+
+Deleting a user account from Supabase Auth requires the **Service Role Key**.
+
+1. Go to your [Supabase Dashboard](https://supabase.com/dashboard) → **Project Settings** → **API**.
+2. Scroll to **Project API Keys** and copy the **`service_role`** key (click "Reveal").
+3. Go to [Vercel Dashboard](https://vercel.com) → Select your `musehaus` project → **Settings** → **Environment Variables**.
+4. Add a new variable:
+   - **Key**: `SUPABASE_SERVICE_ROLE_KEY`
+   - **Value**: *(paste your service_role key)*
+5. Click **Save**.
+
