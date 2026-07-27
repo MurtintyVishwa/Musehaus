@@ -7,8 +7,8 @@ import { ArrowLeft, ShieldCheck, CheckCircle2, QrCode, Smartphone, Info } from '
 import { sendBookingEmail } from '../lib/email';
 
 // Configurable UPI details for the business
-const MERCHANT_UPI_ID = '8309978539-t7d7@axl'; // Replace with your real UPI ID (GPay/PhonePe/Paytm business ID)
-const MERCHANT_NAME = 'Supriya';
+const MERCHANT_UPI_ID = '7093666568@ybl'; // Primary VPA handle (works cleanly across all UPI apps)
+const MERCHANT_NAME = 'Vishwanath Murtinty';
 
 export default function Checkout() {
   const [searchParams] = useSearchParams();
@@ -327,9 +327,25 @@ export default function Checkout() {
                   />
                 </div>
 
-                <div className="text-[10px] text-muted font-light flex flex-col gap-0.5">
+                <div className="w-full bg-white p-3 rounded border border-ink/10 text-left flex items-center justify-between mt-2">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-muted font-semibold">Payee UPI ID</p>
+                    <p className="text-xs font-mono font-bold text-ink">{MERCHANT_UPI_ID}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(MERCHANT_UPI_ID);
+                      showToast('UPI ID copied to clipboard! ✦', 'success');
+                    }}
+                    className="bg-cream hover:bg-ink/5 text-ink text-[10px] uppercase tracking-widest font-bold px-3 py-1.5 rounded border border-ink/15 transition-all"
+                  >
+                    Copy UPI ID
+                  </button>
+                </div>
+
+                <div className="text-[10px] text-muted font-light flex flex-col gap-0.5 mt-1">
                   <span>Payee: <span className="font-semibold text-ink">{MERCHANT_NAME}</span></span>
-                  <span>UPI ID: <span className="font-semibold text-ink">{MERCHANT_UPI_ID}</span></span>
                   <span>Amount: <span className="font-semibold text-ink">₹{price}</span></span>
                   <span>Txn Ref: <span className="font-mono text-ink/80 text-[9px]">{transactionId}</span></span>
                 </div>
