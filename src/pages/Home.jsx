@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Award, Sparkles } from 'lucide-react';
-import { getWorkshops, enrollInWorkshop, getUserEnrollments } from '../lib/supabase';
+import { getActiveWorkshops, enrollInWorkshop, getUserEnrollments } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import WorkshopCard from '../components/WorkshopCard';
@@ -18,15 +18,20 @@ export default function Home() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const { data: wsData } = await getWorkshops();
+      const { data: wsData } = await getActiveWorkshops();
       if (wsData) {
         setWorkshops(wsData.slice(0, 3));
       }
 
       if (user) {
         const { data: enData } = await getUserEnrollments(user.id);
-        if (enData) {
-          setEnrolledIds(enData.map(e => e.workshop_id));
+        if (enData && wsData) {
+          const activeIds = new Set(wsData.map((w) => w.id));
+          setEnrolledIds(
+            enData
+              .filter((e) => activeIds.has(e.workshop_id))
+              .map((e) => e.workshop_id)
+          );
         }
       } else {
         setEnrolledIds([]);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { enrollInWorkshop, getWorkshops, checkExistingEnrollment } from '../lib/supabase';
+import { enrollInWorkshop, getActiveWorkshops, checkExistingEnrollment } from '../lib/supabase';
 import { ArrowLeft, ShieldCheck, CheckCircle2, QrCode, Smartphone, Info } from 'lucide-react';
 import { sendBookingEmail } from '../lib/email';
 
@@ -53,9 +53,9 @@ export default function Checkout() {
     setTransactionId(uniqueTxnId);
 
     Promise.all([
-      getWorkshops(),
+      getActiveWorkshops(),
       checkExistingEnrollment(user.id, workshopId, isCombo)
-    ]).then(([{ data: wsData }, { data: enrollData, error: enrollError }]) => {
+    ]).then(([{ data: wsData }, { data: enrollData }]) => {
       const found = wsData?.find((w) => w.id === workshopId);
       setWorkshop(found || null);
       setExistingEnrollment(enrollData || null);

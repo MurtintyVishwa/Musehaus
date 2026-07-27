@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, ArrowRight } from 'lucide-react';
-import { getWorkshops } from '../lib/supabase';
+import { getActiveWorkshops } from '../lib/supabase';
 
 const DEFAULT_GRADIENT = 'linear-gradient(135deg, #f5f0e8 0%, #e8d5c4 40%, #c8704a 100%)';
 
@@ -38,7 +38,7 @@ export default function Workshops() {
     const loadWorkshops = async () => {
       setLoading(true);
       try {
-        const { data } = await getWorkshops();
+        const { data } = await getActiveWorkshops();
         if (!cancelled && data) {
           setWorkshops(data);
         }

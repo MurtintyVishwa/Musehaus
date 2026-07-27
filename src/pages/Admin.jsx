@@ -7,8 +7,10 @@ import {
   getAdminOverview, 
   getAdminEnrollments, 
   getAdminParticipants, 
-  getWorkshops, 
-  updateWorkshopDetails 
+  getAdminWorkshops,
+  updateWorkshopDetails,
+  createNewWorkshopEvent,
+  deleteParticipant
 } from '../lib/supabase';
 import { 
   LayoutDashboard, 
@@ -20,16 +22,16 @@ import {
   X, 
   Download, 
   Search, 
-  Filter, 
   ShieldAlert, 
   CheckCircle2, 
-  Clock, 
   Calendar, 
   IndianRupee, 
   ArrowLeft,
   Eye,
-  Save,
-  Sparkles
+  Sparkles,
+  Trash2,
+  Rocket,
+  Pencil
 } from 'lucide-react';
 
 export default function Admin() {
@@ -49,6 +51,7 @@ export default function Admin() {
   const [enrollments, setEnrollments] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [workshop, setWorkshop] = useState(null);
+  const [workshopHistory, setWorkshopHistory] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
 
   // Filters & Search
@@ -72,6 +75,11 @@ export default function Admin() {
     status: 'open'
   });
   const [savingSettings, setSavingSettings] = useState(false);
+  const [creatingNewWorkshop, setCreatingNewWorkshop] = useState(false);
+  const [showLaunchConfirm, setShowLaunchConfirm] = useState(false);
+
+  const [participantToDelete, setParticipantToDelete] = useState(null);
+  const [deletingUser, setDeletingUser] = useState(false);
 
   // Verify Admin Status
   useEffect(() => {
@@ -114,20 +122,20 @@ export default function Admin() {
         setLoadingData(false);
       });
     } else if (activeTab === 'settings') {
-      getWorkshops().then(({ data }) => {
-        const ws = data?.[0];
-        setWorkshop(ws || null);
-        if (ws) {
+      getAdminWorkshops().then(({ active, history }) => {
+        setWorkshop(active || null);
+        setWorkshopHistory(history || []);
+        if (active) {
           setSettingsForm({
-            title: ws.title || '',
-            description: ws.description || '',
-            date: ws.date || '',
-            time: ws.time || '',
-            price: ws.price || 499,
-            comboPrice: ws.combo_price ?? 799,
-            seats_total: ws.seats_total ?? 20,
-            seats_remaining: ws.seats_remaining ?? 20,
-            status: ws.status || 'open'
+            title: active.title || '',
+            description: active.description || '',
+            date: active.date || '',
+            time: active.time || '',
+            price: active.price || 499,
+            comboPrice: active.combo_price ?? 799,
+            seats_total: active.seats_total ?? 20,
+            seats_remaining: active.seats_remaining ?? 20,
+            status: active.status || 'open'
           });
         }
         setLoadingData(false);
@@ -167,23 +175,90 @@ export default function Admin() {
   };
 
   const loadWorkshopSettings = async () => {
-    const { data } = await getWorkshops();
-    const ws = data?.[0];
-    setWorkshop(ws || null);
-    if (ws) {
+    const { active, history } = await getAdminWorkshops();
+    setWorkshop(active || null);
+    setWorkshopHistory(history || []);
+    if (active) {
       setSettingsForm({
-        title: ws.title || '',
-        description: ws.description || '',
-        date: ws.date || '',
-        time: ws.time || '',
-        price: ws.price || 499,
-        comboPrice: ws.combo_price ?? 799,
-        seats_total: ws.seats_total ?? 20,
-        seats_remaining: ws.seats_remaining ?? 20,
-        status: ws.status || 'open'
+        title: active.title || '',
+        description: active.description || '',
+        date: active.date || '',
+        time: active.time || '',
+        price: active.price || 499,
+        comboPrice: active.combo_price ?? 799,
+        seats_total: active.seats_total ?? 20,
+        seats_remaining: active.seats_remaining ?? 20,
+        status: active.status || 'open'
       });
     }
-    return ws;
+    return active;
+  };
+
+  const refreshParticipants = async () => {
+    const { data } = await getAdminParticipants();
+    setParticipants(data || []);
+  };
+
+  const handleDeleteParticipant = async () => {
+    if (!participantToDelete) return;
+
+    setDeletingUser(true);
+    const { error } = await deleteParticipant(participantToDelete.id);
+
+    if (error) {
+      showToast(error.message || 'Failed to delete user.', 'error');
+    } else {
+      showToast('User deleted successfully', 'success');
+      setParticipantToDelete(null);
+      await refreshParticipants();
+    }
+    setDeletingUser(false);
+  };
+
+  const handleLaunchNewWorkshop = async () => {
+    if (!workshop) return;
+
+    setCreatingNewWorkshop(true);
+    const { data, error } = await createNewWorkshopEvent(workshop.id, {
+      title: settingsForm.title,
+      description: settingsForm.description,
+      date: settingsForm.date,
+      time: settingsForm.time,
+      price: settingsForm.price,
+      combo_price: settingsForm.comboPrice,
+      seats_total: settingsForm.seats_total,
+      seats_remaining: settingsForm.seats_remaining
+    });
+
+    if (error) {
+      showToast('Failed to create new workshop event.', 'error');
+    } else {
+      showToast('New workshop created! Previous registrations are archived.', 'success');
+      setShowLaunchConfirm(false);
+      if (data) {
+        setWorkshop(data);
+        setSettingsForm({
+          title: data.title || '',
+          description: data.description || '',
+          date: data.date || '',
+          time: data.time || '',
+          price: data.price || 499,
+          comboPrice: data.combo_price ?? 799,
+          seats_total: data.seats_total ?? 20,
+          seats_remaining: data.seats_remaining ?? 20,
+          status: data.status || 'open'
+        });
+      }
+      await loadWorkshopSettings();
+    }
+    setCreatingNewWorkshop(false);
+  };
+
+  const canDeleteParticipant = (participant) => {
+    if (!user) return false;
+    if (String(participant.id) === String(user.id)) return false;
+    if (participant.is_admin) return false;
+    return true;
   };
 
   // Save Workshop Settings
@@ -723,7 +798,8 @@ export default function Admin() {
                       <th className="py-3.5 px-4">Phone</th>
                       <th className="py-3.5 px-4">Joined Date</th>
                       <th className="py-3.5 px-4">Has Booked?</th>
-                      <th className="py-3.5 px-4 text-right">Role</th>
+                      <th className="py-3.5 px-4">Role</th>
+                      <th className="py-3.5 px-4 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-ink/5">
@@ -740,13 +816,29 @@ export default function Admin() {
                             {p.has_booked ? 'Yes ✦' : 'No'}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-right font-medium">
+                        <td className="py-3 px-4">
                           {p.is_admin ? (
                             <span className="bg-gold/20 text-gold px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider">
                               Admin
                             </span>
                           ) : (
                             <span className="text-muted text-[10px] uppercase">Member</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                          {canDeleteParticipant(p) ? (
+                            <button
+                              type="button"
+                              onClick={() => setParticipantToDelete(p)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded text-red-600 hover:text-red-700 hover:bg-red-50 border border-red-200 transition-colors text-[10px] uppercase tracking-wider font-bold"
+                              title={`Delete ${p.full_name}`}
+                              aria-label={`Delete ${p.full_name}`}
+                            >
+                              <Trash2 size={14} />
+                              <span>Delete</span>
+                            </button>
+                          ) : (
+                            <span className="text-muted text-[10px]">—</span>
                           )}
                         </td>
                       </tr>
@@ -767,15 +859,40 @@ export default function Admin() {
               <h1 className="font-serif text-3xl md:text-4xl font-light text-ink">
                 Workshop <span className="italic text-terra">Settings</span>
               </h1>
-              <p className="text-xs text-muted font-light mt-1">Modify active workshop dates, pricing, and availability status.</p>
+              <p className="text-xs text-muted font-light mt-1">
+                Edit the current event for minor changes, or launch a new workshop when starting a completely new event.
+              </p>
             </div>
 
             {loadingData ? (
               <div className="bg-white border border-ink/10 rounded-xl p-12 text-center">
                 <p className="text-muted text-xs font-light">Loading workshop settings...</p>
               </div>
+            ) : !workshop ? (
+              <div className="bg-white border border-ink/10 rounded-xl p-12 text-center">
+                <p className="text-muted text-xs font-light">No active workshop found. Launch a new event to get started.</p>
+              </div>
             ) : (
-              <form onSubmit={handleSaveSettings} className="bg-white border border-ink/10 rounded-xl p-8 shadow-sm flex flex-col gap-6 font-sans">
+              <>
+                {/* Current Workshop Card */}
+                <div className="bg-white border border-terra/20 rounded-xl p-6 shadow-sm flex flex-col gap-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <span className="text-[10px] uppercase tracking-widest font-bold text-terra">Current Active Workshop</span>
+                      <h2 className="font-serif text-xl font-medium text-ink mt-1">{workshop.title}</h2>
+                      <p className="text-xs text-muted mt-1">{workshop.date} · {workshop.time}</p>
+                    </div>
+                    <span className="bg-terra/10 text-terra text-[10px] uppercase tracking-wider font-bold px-3 py-1 rounded-full">
+                      ID #{workshop.id}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted leading-relaxed">
+                    <span className="font-semibold text-ink">Edit Details</span> — use for typos, price tweaks, or seat updates on this same event.
+                    {' '}<span className="font-semibold text-ink">Launch New Workshop</span> — creates a fresh event with a new ID so past registrations don&apos;t block new bookings.
+                  </p>
+                </div>
+
+                <form onSubmit={handleSaveSettings} className="bg-white border border-ink/10 rounded-xl p-8 shadow-sm flex flex-col gap-6 font-sans">
                 
                 {/* Title */}
                 <div className="flex flex-col gap-1.5">
@@ -892,25 +1009,141 @@ export default function Admin() {
                   </div>
                 </div>
 
-                {/* Save Button */}
-                <div className="border-t border-ink/10 pt-4 flex justify-end">
+                {/* Action Buttons */}
+                <div className="border-t border-ink/10 pt-4 flex flex-col sm:flex-row justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowLaunchConfirm(true)}
+                    disabled={creatingNewWorkshop}
+                    className="bg-ink hover:bg-ink/90 disabled:opacity-60 text-cream text-xs uppercase tracking-widest font-bold px-6 py-3.5 rounded-sm transition-all shadow-md flex items-center justify-center gap-2"
+                  >
+                    <Rocket size={15} />
+                    Launch New Workshop
+                  </button>
                   <button
                     type="submit"
                     disabled={savingSettings}
                     className="bg-terra hover:bg-terra/90 disabled:opacity-60 text-cream text-xs uppercase tracking-widest font-bold px-8 py-3.5 rounded-sm transition-all shadow-md flex items-center justify-center gap-2"
                   >
-                    <Save size={15} />
-                    {savingSettings ? 'Saving...' : 'Save Workshop Settings'}
+                    <Pencil size={15} />
+                    {savingSettings ? 'Saving...' : 'Save Details'}
                   </button>
                 </div>
 
               </form>
+
+              {/* Past Workshops History */}
+              {workshopHistory.length > 0 && (
+                <div className="bg-white border border-ink/10 rounded-xl p-6 shadow-sm flex flex-col gap-4">
+                  <div>
+                    <h3 className="font-serif text-lg font-medium text-ink">Past Workshops</h3>
+                    <p className="text-xs text-muted font-light mt-1">Archived events — enrollment records are preserved.</p>
+                  </div>
+                  <div className="flex flex-col divide-y divide-ink/5">
+                    {workshopHistory.map((ws) => (
+                      <div key={ws.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <span className="text-sm font-semibold text-ink">{ws.title}</span>
+                          <span className="text-xs text-muted block">{ws.date} · ID #{ws.id}</span>
+                        </div>
+                        <span className="text-[10px] uppercase tracking-wider font-bold text-muted bg-warm/40 px-2.5 py-1 rounded self-start">
+                          {ws.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              </>
             )}
 
           </div>
         )}
 
       </main>
+
+      {/* DELETE USER CONFIRMATION MODAL */}
+      {participantToDelete && (
+        <div className="fixed inset-0 z-50 bg-ink/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-ink/10 rounded-xl shadow-2xl max-w-md w-full p-6 flex flex-col gap-5">
+            <div className="flex justify-between items-center border-b border-ink/10 pb-4">
+              <h3 className="font-serif text-xl font-medium text-ink">Delete User</h3>
+              <button
+                onClick={() => setParticipantToDelete(null)}
+                className="text-muted hover:text-ink p-1 rounded-sm transition-colors"
+                disabled={deletingUser}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="text-sm text-muted leading-relaxed">
+              Are you sure you want to delete <span className="font-semibold text-ink">{participantToDelete.full_name}</span>?
+              This will remove their account and all associated bookings permanently.
+              This action cannot be undone.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => setParticipantToDelete(null)}
+                disabled={deletingUser}
+                className="flex-1 border border-ink/20 text-ink text-xs uppercase tracking-widest font-bold py-3 rounded-sm hover:bg-ink/5 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteParticipant}
+                disabled={deletingUser}
+                className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-cream text-xs uppercase tracking-widest font-bold py-3 rounded-sm transition-colors"
+              >
+                {deletingUser ? 'Deleting...' : 'Delete Permanently'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LAUNCH NEW WORKSHOP CONFIRMATION MODAL */}
+      {showLaunchConfirm && (
+        <div className="fixed inset-0 z-50 bg-ink/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-ink/10 rounded-xl shadow-2xl max-w-md w-full p-6 flex flex-col gap-5">
+            <div className="flex justify-between items-center border-b border-ink/10 pb-4">
+              <h3 className="font-serif text-xl font-medium text-ink">Launch New Workshop</h3>
+              <button
+                onClick={() => setShowLaunchConfirm(false)}
+                className="text-muted hover:text-ink p-1 rounded-sm transition-colors"
+                disabled={creatingNewWorkshop}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="text-sm text-muted leading-relaxed">
+              This will archive the current workshop (ID #{workshop?.id}) as <span className="font-semibold text-ink">completed</span> and
+              create a brand-new event with a fresh ID using the details in the form above.
+              Previous enrollment records will be kept, but users won&apos;t see &quot;already registered&quot; for the new event.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => setShowLaunchConfirm(false)}
+                disabled={creatingNewWorkshop}
+                className="flex-1 border border-ink/20 text-ink text-xs uppercase tracking-widest font-bold py-3 rounded-sm hover:bg-ink/5 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLaunchNewWorkshop}
+                disabled={creatingNewWorkshop}
+                className="flex-1 bg-ink hover:bg-ink/90 disabled:opacity-60 text-cream text-xs uppercase tracking-widest font-bold py-3 rounded-sm transition-colors flex items-center justify-center gap-2"
+              >
+                <Rocket size={14} />
+                {creatingNewWorkshop ? 'Creating...' : 'Launch New Workshop'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* DETAIL MODAL FOR BOOKING */}
       {selectedBooking && (

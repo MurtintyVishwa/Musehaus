@@ -107,9 +107,34 @@ export async function getWorkshops() {
   const { data, error } = await supabase
     .from('workshops')
     .select('*')
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: false });
 
   return { data, error };
+}
+
+export async function getActiveWorkshops() {
+  const { data, error } = await getWorkshops();
+  if (error || !data) return { data: data || [], error };
+
+  const active = data.filter(
+    (w) => !['completed', 'cancelled'].includes(w.status)
+  );
+  return { data: active, error: null };
+}
+
+export async function getAdminWorkshops() {
+  const { data, error } = await getWorkshops();
+  if (error || !data) {
+    return { active: null, history: [], error };
+  }
+
+  const active =
+    data.find((w) => !['completed', 'cancelled'].includes(w.status)) || null;
+  const history = data.filter((w) =>
+    ['completed', 'cancelled'].includes(w.status)
+  );
+
+  return { active, history, error: null };
 }
 
 // --- AUTHENTICATION FUNCTIONS ---
@@ -315,19 +340,42 @@ export async function getUserEnrollments(userId) {
 export async function checkExistingEnrollment(userId, workshopId, isCombo = false) {
   if (MOCK_MODE) {
     const enrollments = getMockData('enrollments', []);
-    // Match on workshop AND option type (solo vs combo are separate)
-    const found = enrollments.find(e => e.user_id === userId && e.workshop_id === workshopId && !!e.is_combo === !!isCombo);
+    const workshops = getMockData('workshops', DEFAULT_WORKSHOPS);
+    const workshop = workshops.find((w) => w.id === workshopId);
+
+    if (!workshop || ['completed', 'cancelled'].includes(workshop.status)) {
+      return { data: null, error: null };
+    }
+
+    const found = enrollments.find(
+      (e) =>
+        e.user_id === userId &&
+        e.workshop_id === workshopId &&
+        !!e.is_combo === !!isCombo
+    );
     return { data: found || null, error: null };
-  } else {
-    const { data, error } = await supabase
-      .from('enrollments')
-      .select('id, razorpay_payment_id, enrolled_at, is_combo')
-      .eq('user_id', userId)
-      .eq('workshop_id', workshopId)
-      .eq('is_combo', isCombo)
-      .maybeSingle();
-    return { data, error };
   }
+
+  const { data: workshop, error: workshopError } = await supabase
+    .from('workshops')
+    .select('id, status, title, date')
+    .eq('id', workshopId)
+    .maybeSingle();
+
+  if (workshopError) return { data: null, error: workshopError };
+  if (!workshop || ['completed', 'cancelled'].includes(workshop.status)) {
+    return { data: null, error: null };
+  }
+
+  const { data, error } = await supabase
+    .from('enrollments')
+    .select('id, razorpay_payment_id, enrolled_at, is_combo')
+    .eq('user_id', userId)
+    .eq('workshop_id', workshopId)
+    .eq('is_combo', isCombo)
+    .maybeSingle();
+
+  return { data, error };
 }
 
 // --- ADMIN FUNCTIONS ---
@@ -611,5 +659,157 @@ export async function updateWorkshopDetails(workshopId, updatedFields) {
     return { data: data ? data[0] : null, error };
   } catch (err) {
     return { data: null, error: err };
+  }
+}
+
+export async function createNewWorkshopEvent(currentWorkshopId, newWorkshopFields) {
+  if (MOCK_MODE) {
+    await delay(400);
+    const workshops = getMockData('workshops', DEFAULT_WORKSHOPS);
+    const currentIdx = workshops.findIndex((w) => w.id === currentWorkshopId);
+
+    if (currentIdx !== -1) {
+      workshops[currentIdx] = { ...workshops[currentIdx], status: 'completed' };
+    }
+
+    const current = currentIdx !== -1 ? workshops[currentIdx] : DEFAULT_WORKSHOPS[0];
+    const newId = workshops.reduce((max, w) => Math.max(max, w.id), 0) + 1;
+
+    const newWorkshop = {
+      id: newId,
+      title: newWorkshopFields.title || 'New Workshop',
+      description: newWorkshopFields.description || '',
+      instructor_name: current.instructor_name || 'MuseHaus Team',
+      instructor_avatar_initials: current.instructor_avatar_initials || 'MH',
+      medium: current.medium || 'mixed',
+      level: current.level || 'beginner',
+      date: newWorkshopFields.date || '',
+      time: newWorkshopFields.time || '',
+      duration_hours: current.duration_hours || 3,
+      price: parseFloat(newWorkshopFields.price) || 499,
+      combo_price: parseFloat(newWorkshopFields.combo_price) || 799,
+      seats_total: parseInt(newWorkshopFields.seats_total, 10) || 20,
+      seats_remaining: parseInt(newWorkshopFields.seats_remaining, 10) || 20,
+      status: 'open',
+      gradient_style: current.gradient_style || 'from-[#e8a87c] to-[#c0623a]',
+      created_at: new Date().toISOString()
+    };
+
+    workshops.unshift(newWorkshop);
+    setMockData('workshops', workshops);
+
+    return { data: newWorkshop, error: null };
+  }
+
+  try {
+    const { data: currentRows, error: fetchError } = await supabase
+      .from('workshops')
+      .select('*')
+      .eq('id', currentWorkshopId)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+
+    const { error: archiveError } = await supabase
+      .from('workshops')
+      .update({ status: 'completed' })
+      .eq('id', currentWorkshopId);
+
+    if (archiveError) throw archiveError;
+
+    const current = currentRows || {};
+    const payload = {
+      title: newWorkshopFields.title,
+      description: newWorkshopFields.description || '',
+      instructor_name: current.instructor_name || 'MuseHaus Team',
+      instructor_avatar_initials: current.instructor_avatar_initials || 'MH',
+      medium: current.medium || 'mixed',
+      level: current.level || 'beginner',
+      date: newWorkshopFields.date,
+      time: newWorkshopFields.time,
+      duration_hours: current.duration_hours || 3,
+      price: parseFloat(newWorkshopFields.price),
+      combo_price: parseFloat(newWorkshopFields.combo_price),
+      seats_total: parseInt(newWorkshopFields.seats_total, 10),
+      seats_remaining: parseInt(newWorkshopFields.seats_remaining, 10),
+      status: 'open',
+      gradient_style: current.gradient_style || 'from-[#e8a87c] to-[#c0623a]'
+    };
+
+    const { data, error } = await supabase
+      .from('workshops')
+      .insert([payload])
+      .select();
+
+    if (error) throw error;
+    return { data: data ? data[0] : null, error: null };
+  } catch (err) {
+    console.error('Error creating new workshop event:', err);
+    return { data: null, error: err };
+  }
+}
+
+export async function deleteParticipant(userId) {
+  if (MOCK_MODE) {
+    await delay(400);
+    const enrollments = getMockData('enrollments', []);
+    const users = getMockData('users', []);
+
+    setMockData(
+      'enrollments',
+      enrollments.filter((e) => e.user_id !== userId)
+    );
+    setMockData(
+      'users',
+      users.filter((u) => u.id !== userId)
+    );
+
+    const sessionStr = localStorage.getItem('musehaus_session');
+    const sessionUser = sessionStr ? JSON.parse(sessionStr) : null;
+    if (sessionUser?.id === userId) {
+      localStorage.setItem('musehaus_session', JSON.stringify(null));
+    }
+
+    return { error: null };
+  }
+
+  try {
+    const { error: enrollError } = await supabase
+      .from('enrollments')
+      .delete()
+      .eq('user_id', userId);
+
+    if (enrollError) throw enrollError;
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', userId);
+
+    if (profileError) throw profileError;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch('/api/delete-user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ userId })
+    });
+
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to delete auth account');
+    }
+
+    return { error: null };
+  } catch (err) {
+    console.error('Error deleting participant:', err);
+    return { error: err };
   }
 }
