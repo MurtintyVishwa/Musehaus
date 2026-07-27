@@ -1,43 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Star, ChevronLeft, ChevronRight, Award, Compass, Sparkles } from 'lucide-react';
+import { ArrowRight, Award, Sparkles } from 'lucide-react';
 import { getWorkshops, enrollInWorkshop, getUserEnrollments } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import WorkshopCard from '../components/WorkshopCard';
 
-// Testimonials hardcoded data
-const TESTIMONIALS = [
-  {
-    id: 1,
-    quote: "MuseHaus redefined how I view clay. The workshop environment is peaceful, refined, and Kenji's guidance is masterly. It's a genuine luxury escape in the middle of the city.",
-    author: "Elena Rostova",
-    role: "Collector & Ceramicist",
-    initials: "ER"
-  },
-  {
-    id: 2,
-    quote: "The Stone Carving workshop was spectacular. Working with high-grade marble in a space that feels like a temple to craftsmanship is an experience I will never forget.",
-    author: "Marcus Thorne",
-    role: "Architectural Designer",
-    initials: "MT"
-  },
-  {
-    id: 3,
-    quote: "Marina Voss taught us to search for light. My painting technique transformed in just one weekend. Every details — from the organic linen aprons to the organic teas — was curated.",
-    author: "Sophia Sterling",
-    role: "Visual Artist",
-    initials: "SS"
-  }
-];
-
 export default function Home() {
   const [workshops, setWorkshops] = useState([]);
   const [enrolledIds, setEnrolledIds] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [testimonialIdx, setTestimonialIdx] = useState(0);
-  const [emailInput, setEmailInput] = useState('');
-  
+
   const { user } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -47,10 +20,9 @@ export default function Home() {
     try {
       const { data: wsData } = await getWorkshops();
       if (wsData) {
-        // Take the top 3 workshops for the Home page
         setWorkshops(wsData.slice(0, 3));
       }
-      
+
       if (user) {
         const { data: enData } = await getUserEnrollments(user.id);
         if (enData) {
@@ -82,53 +54,28 @@ export default function Home() {
       showToast(error.message, "error");
     } else {
       showToast("Seat reserved successfully!", "success");
-      loadData(); // reload to refresh seats remaining and enrollment state
+      loadData();
     }
-  };
-
-  const handleNewsletterSubmit = (e) => {
-    e.preventDefault();
-    if (!emailInput || !emailInput.includes('@')) {
-      showToast("Please enter a valid email address.", "error");
-      return;
-    }
-    showToast("Thank you for subscribing to the MuseHaus Journal.", "success");
-    setEmailInput('');
-  };
-
-  const nextTestimonial = () => {
-    setTestimonialIdx((prev) => (prev + 1) % TESTIMONIALS.length);
-  };
-
-  const prevTestimonial = () => {
-    setTestimonialIdx((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
   };
 
   return (
     <div className="bg-cream text-ink transition-all">
-      {/* 1. HERO SECTION */}
+      {/* HERO SECTION */}
       <section className="relative min-h-[85vh] flex items-center justify-center bg-gradient-to-b from-warm/40 to-cream overflow-hidden px-6 py-20 border-b border-ink/5">
-        {/* Decorative Grid Lines */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(26,26,24,0.02)_1px,_transparent_1px),_linear-gradient(90deg,_rgba(26,26,24,0.02)_1px,_transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
-        
-        {/* Soft abstract brand-tint glows */}
         <div className="absolute -top-40 -left-40 w-96 h-96 bg-terra/5 rounded-full blur-[100px]" />
         <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-gold/5 rounded-full blur-[100px]" />
 
         <div className="max-w-5xl mx-auto text-center z-10 flex flex-col items-center gap-8">
-          
-          {/* Tagline Badge */}
           <div className="inline-flex items-center gap-2 bg-warm/80 border border-gold/40 px-4 py-1.5 rounded-full text-[10px] uppercase tracking-[0.25em] font-semibold text-terra shadow-sm animate-pulse">
             <Sparkles size={12} />
             <span>A Sanctuary for the Fine Arts</span>
           </div>
 
-          {/* Headline */}
           <h1 className="font-serif text-5xl md:text-7xl leading-[1.1] tracking-wide text-ink font-light max-w-4xl">
             Where creativity, friendship, and beautiful <span className="font-italic text-terra italic">memories come to life.</span>
           </h1>
 
-          {/* Subheading */}
           <p className="text-base md:text-xl font-sans text-muted max-w-2xl font-light leading-relaxed whitespace-pre-line">
             {`MuseHaus ✨🎨
 A home of creativity & inspiration
@@ -137,7 +84,6 @@ A cozy corner for art lovers to create, learn & connect 🤍
 Creating art, memories & beautiful experiences together ✨`}
           </p>
 
-          {/* Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 mt-4 w-full sm:w-auto">
             <Link
               to="/workshops"
@@ -146,21 +92,12 @@ Creating art, memories & beautiful experiences together ✨`}
               <span>Explore Workshops</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </Link>
-            <Link
-              to="/story"
-              className="bg-transparent hover:bg-ink/5 text-ink border border-ink/35 text-xs uppercase tracking-[0.2em] font-bold px-8 py-4 rounded-sm transition-all duration-300 flex items-center justify-center"
-            >
-              Our Story
-            </Link>
           </div>
-
-
-
         </div>
       </section>
 
-      {/* 3. FEATURED WORKSHOPS GRID */}
-      <section id="workshops" className="py-24 px-6 md:px-12 max-w-7xl mx-auto border-b border-ink/5">
+      {/* FEATURED WORKSHOPS GRID */}
+      <section id="workshops" className="py-24 px-6 md:px-12 max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
             <div className="flex items-center gap-2 text-terra text-xs uppercase tracking-widest font-semibold mb-2">
@@ -197,67 +134,6 @@ Creating art, memories & beautiful experiences together ✨`}
           </div>
         )}
       </section>
-
-      {/* 4. TESTIMONIALS SECTION */}
-      <section className="py-24 bg-warm/20 border-b border-ink/5 px-6">
-        <div className="max-w-4xl mx-auto text-center flex flex-col items-center gap-6">
-          <div className="flex gap-1">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <Star key={n} size={14} className="fill-gold text-gold" />
-            ))}
-          </div>
-
-          <h2 className="font-serif text-xs uppercase tracking-[0.25em] text-muted font-semibold">
-            What Our Members Say
-          </h2>
-
-          {/* Carousel Body */}
-          <div className="relative min-h-[160px] flex items-center justify-center px-4 w-full">
-            <blockquote className="font-serif text-xl md:text-3xl text-ink leading-relaxed font-light italic transition-all duration-500">
-              “{TESTIMONIALS[testimonialIdx].quote}”
-            </blockquote>
-          </div>
-
-          <div className="flex items-center gap-3 mt-4">
-            {/* Initials Circle */}
-            <div className="w-10 h-10 rounded-full bg-cream border border-gold/40 flex items-center justify-center text-xs font-semibold text-ink shadow-sm">
-              {TESTIMONIALS[testimonialIdx].initials}
-            </div>
-            
-            <div className="text-left">
-              <cite className="block text-sm font-semibold text-ink not-italic">
-                {TESTIMONIALS[testimonialIdx].author}
-              </cite>
-              <span className="text-xs text-muted font-light">
-                {TESTIMONIALS[testimonialIdx].role}
-              </span>
-            </div>
-          </div>
-
-          {/* Nav buttons */}
-          <div className="flex gap-4 mt-6">
-            <button
-              onClick={prevTestimonial}
-              className="w-10 h-10 rounded-full bg-cream hover:bg-ink hover:text-cream border border-ink/10 flex items-center justify-center transition-all duration-300 shadow-sm"
-              aria-label="Previous testimonial"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <button
-              onClick={nextTestimonial}
-              className="w-10 h-10 rounded-full bg-cream hover:bg-ink hover:text-cream border border-ink/10 flex items-center justify-center transition-all duration-300 shadow-sm"
-              aria-label="Next testimonial"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. NEWSLETTER STRIP — commented out until mailing list is ready */}
-      {/* <section className="py-20 px-6 md:px-12 bg-ink text-cream relative overflow-hidden">
-        ...
-      </section> */}
     </div>
   );
 }

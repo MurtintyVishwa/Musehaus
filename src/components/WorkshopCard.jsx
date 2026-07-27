@@ -1,11 +1,9 @@
 import React from 'react';
 import { Calendar, Clock, User, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '../context/ToastContext';
 
 const WorkshopCard = ({ workshop, onEnroll, isEnrolled }) => {
   const navigate = useNavigate();
-  const { showToast } = useToast();
   const {
     id,
     title,
@@ -33,6 +31,14 @@ const WorkshopCard = ({ workshop, onEnroll, isEnrolled }) => {
         return <span className="bg-ink text-cream text-[10px] uppercase tracking-widest font-semibold px-2.5 py-1 rounded-sm">Sold Out</span>;
       case 'almost-full':
         return <span className="bg-terra text-cream text-[10px] uppercase tracking-widest font-semibold px-2.5 py-1 rounded-sm">Almost Full ({seats_remaining} left)</span>;
+      case 'completed':
+        return <span className="bg-muted text-cream text-[10px] uppercase tracking-widest font-semibold px-2.5 py-1 rounded-sm">Completed</span>;
+      case 'cancelled':
+        return <span className="bg-ink/60 text-cream text-[10px] uppercase tracking-widest font-semibold px-2.5 py-1 rounded-sm">Cancelled</span>;
+      case 'ongoing':
+        return <span className="bg-gold text-ink text-[10px] uppercase tracking-widest font-semibold px-2.5 py-1 rounded-sm">Ongoing</span>;
+      case 'upcoming':
+        return <span className="bg-[#a8c8a0] text-ink text-[10px] uppercase tracking-widest font-semibold px-2.5 py-1 rounded-sm">Upcoming</span>;
       default:
         return <span className="bg-[#a8c8a0] text-ink text-[10px] uppercase tracking-widest font-semibold px-2.5 py-1 rounded-sm">Open</span>;
     }
@@ -127,12 +133,12 @@ const WorkshopCard = ({ workshop, onEnroll, isEnrolled }) => {
             >
               ✓ Registered
             </button>
-          ) : status === 'sold-out' ? (
+          ) : status === 'sold-out' || status === 'completed' || status === 'cancelled' ? (
             <button
-              onClick={() => showToast ? showToast("You have been added to the waitlist! ✦", "success") : null}
-              className="w-full bg-transparent hover:bg-ink text-ink hover:text-cream border border-ink/40 text-xs uppercase tracking-widest font-bold py-3 rounded-sm text-center transition-all duration-300"
+              disabled
+              className="w-full bg-ink/10 text-muted border border-ink/20 text-xs uppercase tracking-widest font-bold py-3 rounded-sm text-center select-none cursor-not-allowed"
             >
-              Join Waitlist
+              {status === 'sold-out' ? 'Sold Out' : status === 'completed' ? 'Completed' : 'Cancelled'}
             </button>
           ) : (
             <button

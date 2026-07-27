@@ -33,6 +33,7 @@ const DEFAULT_WORKSHOPS = [
   {
     id: 1,
     title: "Paint & Create: Moulds + Mini Easels",
+    description: "Create beautiful painted moulds and mini easel art — and take home your own handmade keepsakes.",
     instructor_name: "MuseHaus Team",
     instructor_avatar_initials: "MH",
     medium: "painting",
@@ -41,6 +42,7 @@ const DEFAULT_WORKSHOPS = [
     time: "10:00 AM – 1:00 PM",
     duration_hours: 3,
     price: 499,
+    combo_price: 799,
     seats_total: 20,
     seats_remaining: 15,
     status: "open",
@@ -64,7 +66,7 @@ const setMockData = (key, data) => {
 // Initialize mock database stores
 if (MOCK_MODE) {
   // Version key: bump this string whenever DEFAULT_WORKSHOPS changes to clear stale cache
-  const DATA_VERSION = 'v3_paint_create';
+  const DATA_VERSION = 'v4_workshop_fields';
   const storedVersion = localStorage.getItem('musehaus_data_version');
   if (storedVersion !== DATA_VERSION) {
     localStorage.removeItem('musehaus_workshops');
@@ -100,13 +102,14 @@ export async function getWorkshops() {
   if (MOCK_MODE) {
     await delay(300);
     return { data: getMockData('workshops', DEFAULT_WORKSHOPS), error: null };
-  } else {
-    const { data, error } = await supabase
-      .from('workshops')
-      .select('*')
-      .order('created_at', { ascending: true });
-    return { data, error };
   }
+
+  const { data, error } = await supabase
+    .from('workshops')
+    .select('*')
+    .order('created_at', { ascending: true });
+
+  return { data, error };
 }
 
 // --- AUTHENTICATION FUNCTIONS ---

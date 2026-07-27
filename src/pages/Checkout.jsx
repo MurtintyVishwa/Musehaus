@@ -66,8 +66,8 @@ export default function Checkout() {
     });
   }, [workshopId, isCombo, user]);
 
-  const price = isCombo ? 799 : (workshop?.price || 499);
-  const displayPrice = isCombo ? '₹799' : `₹${workshop?.price || 499}`;
+  const price = isCombo ? (workshop?.combo_price ?? 799) : (workshop?.price || 499);
+  const displayPrice = isCombo ? `₹${workshop?.combo_price ?? 799}` : `₹${workshop?.price || 499}`;
   const label = isCombo ? 'Combo (2 members)' : 'Single seat';
 
   // Construct UPI deep-link URL scheme

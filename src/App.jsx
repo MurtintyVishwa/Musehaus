@@ -7,7 +7,6 @@ import Workshops from './pages/Workshops';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import Contact from './pages/Contact';
-import Story from './pages/Story';
 import Checkout from './pages/Checkout';
 import ResetPassword from './pages/ResetPassword';
 import Admin from './pages/Admin';
@@ -34,7 +33,6 @@ function AppContent() {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/story" element={<Story />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/admin" element={<Admin />} />

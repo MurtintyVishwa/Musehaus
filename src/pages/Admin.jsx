@@ -62,10 +62,13 @@ export default function Admin() {
   // Settings form state
   const [settingsForm, setSettingsForm] = useState({
     title: '',
+    description: '',
     date: '',
     time: '',
     price: 499,
     comboPrice: 799,
+    seats_total: 20,
+    seats_remaining: 20,
     status: 'open'
   });
   const [savingSettings, setSavingSettings] = useState(false);
@@ -117,10 +120,13 @@ export default function Admin() {
         if (ws) {
           setSettingsForm({
             title: ws.title || '',
+            description: ws.description || '',
             date: ws.date || '',
             time: ws.time || '',
             price: ws.price || 499,
-            comboPrice: 799,
+            comboPrice: ws.combo_price ?? 799,
+            seats_total: ws.seats_total ?? 20,
+            seats_remaining: ws.seats_remaining ?? 20,
             status: ws.status || 'open'
           });
         }
@@ -160,24 +166,64 @@ export default function Admin() {
     showToast('Bookings exported to CSV successfully! 📊', 'success');
   };
 
+  const loadWorkshopSettings = async () => {
+    const { data } = await getWorkshops();
+    const ws = data?.[0];
+    setWorkshop(ws || null);
+    if (ws) {
+      setSettingsForm({
+        title: ws.title || '',
+        description: ws.description || '',
+        date: ws.date || '',
+        time: ws.time || '',
+        price: ws.price || 499,
+        comboPrice: ws.combo_price ?? 799,
+        seats_total: ws.seats_total ?? 20,
+        seats_remaining: ws.seats_remaining ?? 20,
+        status: ws.status || 'open'
+      });
+    }
+    return ws;
+  };
+
   // Save Workshop Settings
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     if (!workshop) return;
 
     setSavingSettings(true);
-    const { error } = await updateWorkshopDetails(workshop.id, {
+    const { data, error } = await updateWorkshopDetails(workshop.id, {
       title: settingsForm.title,
+      description: settingsForm.description,
       date: settingsForm.date,
       time: settingsForm.time,
       price: parseFloat(settingsForm.price),
+      combo_price: parseFloat(settingsForm.comboPrice),
+      seats_total: parseInt(settingsForm.seats_total, 10),
+      seats_remaining: parseInt(settingsForm.seats_remaining, 10),
       status: settingsForm.status
     });
 
     if (error) {
       showToast('Failed to update workshop settings.', 'error');
     } else {
-      showToast('Workshop settings updated successfully! ✦', 'success');
+      showToast('Workshop updated successfully!', 'success');
+      if (data) {
+        setWorkshop(data);
+        setSettingsForm({
+          title: data.title || '',
+          description: data.description || '',
+          date: data.date || '',
+          time: data.time || '',
+          price: data.price || 499,
+          comboPrice: data.combo_price ?? 799,
+          seats_total: data.seats_total ?? 20,
+          seats_remaining: data.seats_remaining ?? 20,
+          status: data.status || 'open'
+        });
+      } else {
+        await loadWorkshopSettings();
+      }
     }
     setSavingSettings(false);
   };
@@ -743,6 +789,18 @@ export default function Admin() {
                   />
                 </div>
 
+                {/* Description */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] uppercase tracking-widest font-bold text-muted">Description / Subtitle</label>
+                  <textarea
+                    value={settingsForm.description}
+                    onChange={(e) => setSettingsForm(prev => ({ ...prev, description: e.target.value }))}
+                    rows={3}
+                    placeholder="Brief workshop description shown on the Workshops page"
+                    className="bg-warm/25 border border-ink/10 focus:border-terra rounded-sm px-4 py-3 text-sm focus:outline-none transition-colors resize-none"
+                  />
+                </div>
+
                 {/* Date & Time Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
@@ -770,7 +828,7 @@ export default function Admin() {
                   </div>
                 </div>
 
-                {/* Price & Status Grid */}
+                {/* Price, Combo & Seats Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] uppercase tracking-widest font-bold text-muted">Solo Ticket Price (₹)</label>
@@ -784,15 +842,52 @@ export default function Admin() {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] uppercase tracking-widest font-bold text-muted">Workshop Availability Status</label>
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-muted">Combo Price (2 members, ₹)</label>
+                    <input
+                      type="number"
+                      value={settingsForm.comboPrice}
+                      onChange={(e) => setSettingsForm(prev => ({ ...prev, comboPrice: e.target.value }))}
+                      className="bg-warm/25 border border-ink/10 focus:border-terra rounded-sm px-4 py-3 text-sm focus:outline-none transition-colors font-mono"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-muted">Total Seats</label>
+                    <input
+                      type="number"
+                      value={settingsForm.seats_total}
+                      onChange={(e) => setSettingsForm(prev => ({ ...prev, seats_total: e.target.value }))}
+                      className="bg-warm/25 border border-ink/10 focus:border-terra rounded-sm px-4 py-3 text-sm focus:outline-none transition-colors font-mono"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-muted">Seats Remaining</label>
+                    <input
+                      type="number"
+                      value={settingsForm.seats_remaining}
+                      onChange={(e) => setSettingsForm(prev => ({ ...prev, seats_remaining: e.target.value }))}
+                      className="bg-warm/25 border border-ink/10 focus:border-terra rounded-sm px-4 py-3 text-sm focus:outline-none transition-colors font-mono"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 sm:col-span-2">
+                    <label className="text-[10px] uppercase tracking-widest font-bold text-muted">Workshop Status</label>
                     <select
                       value={settingsForm.status}
                       onChange={(e) => setSettingsForm(prev => ({ ...prev, status: e.target.value }))}
                       className="bg-warm/25 border border-ink/10 focus:border-terra rounded-sm px-4 py-3 text-sm focus:outline-none transition-colors font-medium"
                     >
                       <option value="open">Open for Bookings</option>
-                      <option value="almost-full font-bold">Almost Full</option>
-                      <option value="sold-out text-red-600">Sold Out</option>
+                      <option value="upcoming">Upcoming</option>
+                      <option value="ongoing">Ongoing</option>
+                      <option value="almost-full">Almost Full</option>
+                      <option value="sold-out">Sold Out</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
                     </select>
                   </div>
                 </div>

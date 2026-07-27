@@ -28,7 +28,7 @@ const Footer = () => {
   return (
     <footer className="bg-ink text-cream font-sans mt-auto">
       {/* Top 4-Column Grid Section */}
-      <div className="max-w-7xl mx-auto px-6 md:px-12 py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 border-b border-cream/10">
+      <div className="max-w-7xl mx-auto px-6 md:px-12 py-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12 border-b border-cream/10">
         
         {/* Column 1: Brand & Intro */}
         <div className="flex flex-col gap-4">
@@ -41,28 +41,7 @@ const Footer = () => {
           </p>
         </div>
 
-        {/* Column 2: About */}
-        <div className="flex flex-col gap-4">
-          <h4 className="text-xs uppercase tracking-[0.2em] font-semibold text-gold font-sans">
-            The Studio
-          </h4>
-          <ul className="flex flex-col gap-2.5 text-sm text-muted">
-            <li>
-              <Link to="/story" className="hover:text-terra transition-colors duration-200 font-light">Our Story</Link>
-            </li>
-            <li>
-              <Link to="/story" className="hover:text-terra transition-colors duration-200 font-light">Instructors</Link>
-            </li>
-            <li>
-              <Link to="/story" className="hover:text-terra transition-colors duration-200 font-light">The Space</Link>
-            </li>
-            <li>
-              <Link to="/story" className="hover:text-terra transition-colors duration-200 font-light">Exhibitions</Link>
-            </li>
-          </ul>
-        </div>
-
-        {/* Column 3: Quick Links */}
+        {/* Column 2: Quick Links */}
         <div className="flex flex-col gap-4">
           <h4 className="text-xs uppercase tracking-[0.2em] font-semibold text-gold font-sans">
             Reserve
